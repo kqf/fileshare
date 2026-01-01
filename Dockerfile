@@ -8,17 +8,24 @@ RUN npm install
 COPY . .
 RUN npm run build
 
+
 FROM nginx:alpine
+
+# Install Node.js (needed for alert-worker)
+RUN apk add --no-cache nodejs npm
 
 # Remove default nginx static assets
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy build output to nginx
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Expose port 80
-EXPOSE 80
+# Copy alert worker + entrypoint
+COPY alert-worker.js /app/alert-worker.js
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 COPY nginx.conf /etc/nginx/nginx.conf
 
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 80
+
+CMD ["/entrypoint.sh"]
