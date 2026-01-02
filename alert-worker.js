@@ -15,7 +15,7 @@ function cleanupContext() {
 }
 setInterval(cleanupContext, 60_000)
 
-ttp.createServer((req, res) => {
+http.createServer((req, res) => {
   if (req.method !== 'POST' || req.url !== '/_context') {
     res.writeHead(404)
     return res.end()
