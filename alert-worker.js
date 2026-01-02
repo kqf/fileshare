@@ -85,6 +85,21 @@ rl.on('line', (line) => {
             status >= 400 ? '⚠️' :
                 '✅'
 
+  const statusIcon =
+    status >= 500 ? '🔥' :
+    status >= 400 ? '⚠️' :
+    '✅'
+
+  console.log(
+    `${statusIcon}  ${time}\n` +
+    `    IP:       ${ip}\n` +
+    `    Method:   ${method}\n` +
+    `    URI:      ${uri}\n` +
+    `    Status:   ${status}\n` +
+    `    UA:       ${ua}`
+  )
+
+  if (ctx) {
     console.log(
         `${statusIcon}  ${time}\n` +
         `    IP:       ${ip}\n` +
