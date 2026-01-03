@@ -26,6 +26,12 @@ http.createServer((req, res) => {
         req.on('end', () => {
             try {
                 const payload = JSON.parse(body)
+                const ip = req.socket.remoteAddress
+
+                clientContext.set(ip, {
+                    ...payload,
+                    timestamp: Date.now(),
+                })
 
                 console.log('📥 Client context received')
                 console.log('IP:', req.socket.remoteAddress)
