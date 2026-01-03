@@ -88,6 +88,16 @@ rl.on('line', (line) => {
 
     const statusIcon = '✅'
 
+  console.log(
+    `${statusIcon}  ${time}\n` +
+    `    IP:       ${ip}\n` +
+    `    Method:   ${method}\n` +
+    `    URI:      ${uri}\n` +
+    `    Status:   ${status}\n` +
+    `    UA:       ${ua}`
+  )
+
+  if (ctx) {
     console.log(
         `${statusIcon}  ${time}\n` +
         `    IP:       ${ip}\n` +
