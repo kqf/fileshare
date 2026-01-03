@@ -80,10 +80,7 @@ rl.on('line', (line) => {
 
     const ctx = clientContext.get(ip)
 
-    const statusIcon =
-        status >= 500 ? '🔥' :
-            status >= 400 ? '⚠️' :
-                '✅'
+    const statusIcon = '✅'
 
     console.log(
         `${statusIcon}  ${time}\n` +
