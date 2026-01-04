@@ -11,6 +11,14 @@ function normalizeIp(ip) {
     return ip.replace('::ffff:', '')
 }
 
+function getClientIp(req) {
+    const xff = req.headers['x-forwarded-for']
+    if (xff) {
+        return normalizeIp(xff.split(',')[0].trim())
+    }
+    return normalizeIp(req.socket.remoteAddress)
+}
+
 function cleanupContext() {
     const now = Date.now()
     for (const [ip, ctx] of clientContext.entries()) {
@@ -36,7 +44,7 @@ http.createServer((req, res) => {
         req.on('end', () => {
             try {
                 const payload = JSON.parse(body)
-                const ip = normalizeIp(req.socket.remoteAddress)
+                const ip = getClientIp(req)
 
                 clientContext.set(ip, {
                     ...payload,
