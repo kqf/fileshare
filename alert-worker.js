@@ -1,9 +1,15 @@
 import http from 'node:http'
 import readline from 'node:readline'
-import process from 'node:process'
 
 const CONTEXT_TTL_MS = 5 * 60 * 1000 // 5 minutes
+const MAX_BODY_SIZE = 10_000
+
 const clientContext = new Map()
+
+function normalizeIp(ip) {
+    if (!ip) return ip
+    return ip.replace('::ffff:', '')
+}
 
 function cleanupContext() {
     const now = Date.now()
@@ -13,6 +19,7 @@ function cleanupContext() {
         }
     }
 }
+
 setInterval(cleanupContext, 60_000)
 
 http.createServer((req, res) => {
@@ -20,13 +27,16 @@ http.createServer((req, res) => {
         let body = ''
 
         req.on('data', chunk => {
-            body += chunk.toString()
+            body += chunk
+            if (body.length > MAX_BODY_SIZE) {
+                req.destroy()
+            }
         })
 
         req.on('end', () => {
             try {
                 const payload = JSON.parse(body)
-                const ip = req.socket.remoteAddress
+                const ip = normalizeIp(req.socket.remoteAddress)
 
                 clientContext.set(ip, {
                     ...payload,
@@ -34,7 +44,7 @@ http.createServer((req, res) => {
                 })
 
                 console.log('📥 Client context received')
-                console.log('IP:', req.socket.remoteAddress)
+                console.log('IP:', ip)
                 console.log('Screen:', payload.screen)
                 console.log('Viewport:', payload.viewport)
                 console.log('Timezone:', payload.timezone)
@@ -84,23 +94,12 @@ rl.on('line', (line) => {
         ua,
     } = log
 
-    const ctx = clientContext.get(ip)
+    const normalizedIp = normalizeIp(ip)
+    const ctx = clientContext.get(normalizedIp)
 
-    const statusIcon = '✅'
-
-  console.log(
-    `${statusIcon}  ${time}\n` +
-    `    IP:       ${ip}\n` +
-    `    Method:   ${method}\n` +
-    `    URI:      ${uri}\n` +
-    `    Status:   ${status}\n` +
-    `    UA:       ${ua}`
-  )
-
-  if (ctx) {
     console.log(
-        `${statusIcon}  ${time}\n` +
-        `    IP:       ${ip}\n` +
+        `✅  ${time}\n` +
+        `    IP:       ${normalizedIp}\n` +
         `    Method:   ${method}\n` +
         `    URI:      ${uri}\n` +
         `    Status:   ${status}\n` +
