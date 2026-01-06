@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import './App.css'
 
 function sendClientContext() {
@@ -13,8 +13,6 @@ function sendClientContext() {
 }
 
 function App() {
-  const [count, setCount] = useState(0)
-
   useEffect(() => {
     sendClientContext()
   }, [])
@@ -23,9 +21,6 @@ function App() {
     <>
       <h1>Test</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
