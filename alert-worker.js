@@ -1,6 +1,78 @@
 import http from 'node:http'
 import readline from 'node:readline'
-import process from 'node:process'
+
+const CONTEXT_TTL_MS = 5 * 60 * 1000 // 5 minutes
+const MAX_BODY_SIZE = 10_000
+
+const clientContext = new Map()
+
+function normalizeIp(ip) {
+    if (!ip) return ip
+    return ip.replace('::ffff:', '')
+}
+
+function getClientIp(req) {
+    const xff = req.headers['x-forwarded-for']
+    if (xff) {
+        return normalizeIp(xff.split(',')[0].trim())
+    }
+    return normalizeIp(req.socket.remoteAddress)
+}
+
+function cleanupContext() {
+    const now = Date.now()
+    for (const [ip, ctx] of clientContext.entries()) {
+        if (now - ctx.timestamp > CONTEXT_TTL_MS) {
+            clientContext.delete(ip)
+        }
+    }
+}
+
+setInterval(cleanupContext, 60_000)
+
+http.createServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/_context') {
+        let body = ''
+
+        req.on('data', chunk => {
+            body += chunk
+            if (body.length > MAX_BODY_SIZE) {
+                req.destroy()
+            }
+        })
+
+        req.on('end', () => {
+            try {
+                const payload = JSON.parse(body)
+                const ip = getClientIp(req)
+
+                clientContext.set(ip, {
+                    ...payload,
+                    timestamp: Date.now(),
+                })
+
+                console.log('📥 Client context received')
+                console.log('IP:', ip)
+                console.log('Screen:', payload.screen)
+                console.log('Viewport:', payload.viewport)
+                console.log('Timezone:', payload.timezone)
+                console.log('Language:', payload.language)
+            } catch (err) {
+                console.error('❌ Failed to parse client context', err)
+            }
+
+            res.writeHead(204)
+            res.end()
+        })
+
+        return
+    }
+
+    res.writeHead(404)
+    res.end()
+}).listen(3001, () => {
+    console.log('🟢 Context server listening on 127.0.0.1:3001\n')
+})
 
 const CONTEXT_TTL_MS = 5 * 60 * 1000 // 5 minutes
 const clientContext = new Map()
@@ -84,13 +156,12 @@ rl.on('line', (line) => {
         ua,
     } = log
 
-    const ctx = clientContext.get(ip)
-
-    const statusIcon = '✅'
+    const normalizedIp = normalizeIp(ip)
+    const ctx = clientContext.get(normalizedIp)
 
     console.log(
-        `${statusIcon}  ${time}\n` +
-        `    IP:       ${ip}\n` +
+        `✅  ${time}\n` +
+        `    IP:       ${normalizedIp}\n` +
         `    Method:   ${method}\n` +
         `    URI:      ${uri}\n` +
         `    Status:   ${status}\n` +
