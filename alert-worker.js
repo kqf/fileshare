@@ -74,19 +74,6 @@ http.createServer((req, res) => {
     console.log('🟢 Context server listening on 127.0.0.1:3001\n')
 })
 
-const CONTEXT_TTL_MS = 5 * 60 * 1000 // 5 minutes
-const clientContext = new Map()
-
-function cleanupContext() {
-    const now = Date.now()
-    for (const [ip, ctx] of clientContext.entries()) {
-        if (now - ctx.timestamp > CONTEXT_TTL_MS) {
-            clientContext.delete(ip)
-        }
-    }
-}
-setInterval(cleanupContext, 60_000)
-
 http.createServer((req, res) => {
     if (req.method === 'POST' && req.url === '/_context') {
         let body = ''
