@@ -35,50 +35,6 @@ http.createServer((req, res) => {
         let body = ''
 
         req.on('data', chunk => {
-            body += chunk
-            if (body.length > MAX_BODY_SIZE) {
-                req.destroy()
-            }
-        })
-
-        req.on('end', () => {
-            try {
-                const payload = JSON.parse(body)
-                const ip = getClientIp(req)
-
-                clientContext.set(ip, {
-                    ...payload,
-                    timestamp: Date.now(),
-                })
-
-                console.log('📥 Client context received')
-                console.log('IP:', ip)
-                console.log('Screen:', payload.screen)
-                console.log('Viewport:', payload.viewport)
-                console.log('Timezone:', payload.timezone)
-                console.log('Language:', payload.language)
-            } catch (err) {
-                console.error('❌ Failed to parse client context', err)
-            }
-
-            res.writeHead(204)
-            res.end()
-        })
-
-        return
-    }
-
-    res.writeHead(404)
-    res.end()
-}).listen(3001, () => {
-    console.log('🟢 Context server listening on 127.0.0.1:3001\n')
-})
-
-http.createServer((req, res) => {
-    if (req.method === 'POST' && req.url === '/_context') {
-        let body = ''
-
-        req.on('data', chunk => {
             body += chunk.toString()
         })
 
