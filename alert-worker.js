@@ -2,7 +2,6 @@ import http from 'node:http'
 import readline from 'node:readline'
 
 const CONTEXT_TTL_MS = 5 * 60 * 1000 // 5 minutes
-const MAX_BODY_SIZE = 10_000
 
 const clientContext = new Map()
 
