@@ -16,6 +16,12 @@ function App() {
   const [verified, setVerified] = useState(false)
   const [passes, setPasses] = useState(0)
   const captchaRef = useRef(null)
+  const HCAPTCHA_KEY = import.meta.env.VITE_CAPTCHA_SITE_KEY as string
+
+  if (!HCAPTCHA_KEY) {
+    throw new Error("HCAPTCHA_SITE_KEY is undefined!")
+  }
+
 
   useEffect(() => {
     sendClientContext()
@@ -43,7 +49,7 @@ function App() {
 
           <div style={{ display: 'inline-block' }}>
             <HCaptcha
-              sitekey="YOUR_HCAPTCHA_SITE_KEY"
+              sitekey={HCAPTCHA_KEY}
               onVerify={onCaptchaSolved}
               ref={captchaRef}
             />
