@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import HCaptcha from '@hcaptcha/react-hcaptcha'
 import './App.css'
 
 function sendClientContext() {
@@ -12,14 +13,56 @@ function sendClientContext() {
 }
 
 function App() {
+  const [verified, setVerified] = useState(false)
+  const [passes, setPasses] = useState(0)
+  const captchaRef = useRef(null)
+
   useEffect(() => {
     sendClientContext()
   }, [])
 
+  function onCaptchaSolved() {
+    setPasses(p => p + 1)
+
+    // reset so they have to solve again
+    // if (captchaRef.current) {
+    //   captchaRef.current.resetCaptcha()
+    // }
+
+    if (passes + 1 >= 3) {
+      setVerified(true)
+    }
+  }
+
   return (
-    <>
-      <h1>Hello world</h1>
-    </>
+    <div style={{ textAlign: 'center', marginTop: '40px' }}>
+      {!verified && (
+        <>
+          <h2>Verifying your access…</h2>
+          <p>Multiple security checks required.</p>
+
+          <div style={{ display: 'inline-block' }}>
+            <HCaptcha
+              sitekey="YOUR_HCAPTCHA_SITE_KEY"
+              onVerify={onCaptchaSolved}
+              ref={captchaRef}
+            />
+          </div>
+
+          <p>Completed: {passes} / 3</p>
+        </>
+      )}
+
+      {verified && (
+        <>
+          <h1>Hello world</h1>
+          <p>Access granted.</p>
+          <button onClick={() => alert('Download failed')}>
+            Download files
+          </button>
+        </>
+      )}
+    </div>
   )
 }
 
