@@ -15,7 +15,7 @@ function sendClientContext() {
 function App() {
   const [verified, setVerified] = useState(false)
   const [passes, setPasses] = useState(0)
-  const captchaRef = useRef(null)
+  const captchaRef = useRef<HCaptcha | null>(null)
   const HCAPTCHA_KEY = import.meta.env.VITE_CAPTCHA_SITE_KEY as string
 
   if (!HCAPTCHA_KEY) {
@@ -30,10 +30,9 @@ function App() {
   function onCaptchaSolved() {
     setPasses(p => p + 1)
 
-    // reset so they have to solve again
-    // if (captchaRef.current) {
-    //   captchaRef.current.resetCaptcha()
-    // }
+    if (captchaRef.current) {
+      captchaRef.current.resetCaptcha()
+    }
 
     if (passes + 1 >= 3) {
       setVerified(true)
