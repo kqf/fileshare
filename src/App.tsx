@@ -32,6 +32,7 @@ function App() {
 
     if (captchaRef.current) {
       captchaRef.current.resetCaptcha()
+      window.location.reload()
     }
 
     if (passes + 1 >= 3) {
