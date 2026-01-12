@@ -19,7 +19,7 @@ function App() {
   const HCAPTCHA_KEY = import.meta.env.VITE_CAPTCHA_SITE_KEY as string
 
   if (!HCAPTCHA_KEY) {
-    throw new Error("HCAPTCHA_SITE_KEY is undefined!")
+    throw new Error("Bad gateway")
   }
 
 
