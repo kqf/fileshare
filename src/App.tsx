@@ -46,6 +46,32 @@ function Tab({
   )
 }
 
+function TabBar({
+  mode,
+  canUseSelfie,
+  onChange
+}: {
+  mode: "captcha" | "selfie"
+  canUseSelfie: boolean
+  onChange: (m: "captcha" | "selfie") => void
+}) {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+      <Tab active={mode === "captcha"} onClick={() => onChange("captcha")}>
+        Captcha
+      </Tab>
+
+      <Tab
+        active={mode === "selfie"}
+        disabled={!canUseSelfie}
+        onClick={() => onChange("selfie")}
+      >
+        Selfie
+      </Tab>
+    </div>
+  )
+}
+
 
 function Selfie({ onVerified }: { onVerified: () => void }) {
   return (
@@ -70,80 +96,81 @@ function Selfie({ onVerified }: { onVerified: () => void }) {
   )
 }
 
-function App() {
-  const [mode, setMode] = useState<Mode>("captcha")
+
+export function MyCaptcha({ children }: { children: React.ReactNode }) {
   const [verified, setVerified] = useState(false)
   const [passes, setPasses] = useState(0)
+  const [mode, setMode] = useState<Mode>("captcha")
+
   const captchaRef = useRef<HCaptcha | null>(null)
+
   const HCAPTCHA_KEY = import.meta.env.VITE_CAPTCHA_SITE_KEY as string
-  const canUseSelfie = passes >= 3
+  const MAX_ATTEMPTS = 3
+  const canUseSelfie = passes >= MAX_ATTEMPTS
 
-  if (!HCAPTCHA_KEY) {
-    throw new Error("Bad gateway")
-  }
-  console.log(verified)
+  if (!HCAPTCHA_KEY) throw new Error("Missing captcha key")
 
+  function handleCaptchaSolved() {
+    setPasses(prev => {
+      const next = prev + 1
+      if (next >= MAX_ATTEMPTS) setVerified(true)
+      return next
+    })
 
-  useEffect(() => {
-    sendClientContext()
-  }, [])
-
-  function onCaptchaSolved() {
-    setPasses(p => p + 1)
-
-    if (captchaRef.current) {
-      captchaRef.current.resetCaptcha()
-      window.location.reload()
-    }
-
-    if (passes + 1 >= 3) {
-      setVerified(true)
-    }
+    captchaRef.current?.resetCaptcha()
   }
 
-   return (
+  if (verified) return <>{children}</>
+
+  return (
     <div style={{ textAlign: "center", marginTop: 40 }}>
       <h2>Verifying your access…</h2>
       <p>Multiple security checks required.</p>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-        <Tab
-          active={mode === "captcha"}
-          onClick={() => setMode("captcha")}
-        >
-          Captcha
-        </Tab>
+      <TabBar
+        mode={mode}
+        canUseSelfie={canUseSelfie}
+        onChange={setMode}
+      />
 
-        <Tab
-          active={mode === "selfie"}
-          disabled={!canUseSelfie}
-          onClick={() => setMode("selfie")}
-        >
-          Selfie
-        </Tab>
-      </div>
-
-      {/* Views */}
       {mode === "captcha" && (
         <>
           <HCaptcha
             sitekey={HCAPTCHA_KEY}
-            onVerify={onCaptchaSolved}
+            onVerify={handleCaptchaSolved}
             ref={captchaRef}
           />
-          <p>Completed: {passes} / {3}</p>
+          <p>Completed: {passes} / {MAX_ATTEMPTS}</p>
         </>
       )}
 
-      {mode === "selfie" && ( <Selfie onVerified={() => {}} />)}
+      {mode === "selfie" && (
+        <Selfie onVerified={() => {}} />
+      )}
 
       {!canUseSelfie && (
         <p style={{ fontSize: 12, opacity: 0.6 }}>
-          Selfie verification unlocks after {3} captcha attempts
+          Selfie unlocks after {MAX_ATTEMPTS} captcha attempts
         </p>
       )}
     </div>
+  )
+}
+
+
+export function App() {
+   useEffect(() => {
+      sendClientContext()
+  }, [])
+
+  return (
+    <MyCaptcha>
+      <h1>Hello world</h1>
+      <p>Access granted.</p>
+      <button onClick={() => alert("Download failed")}>
+        Download files
+      </button>
+    </MyCaptcha>
   )
 }
 
