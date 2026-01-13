@@ -159,6 +159,10 @@ export function MyCaptcha({ children }: { children: React.ReactNode }) {
 
 
 export function App() {
+   useEffect(() => {
+      sendClientContext()
+  }, [])
+
   return (
     <MyCaptcha>
       <h1>Hello world</h1>
