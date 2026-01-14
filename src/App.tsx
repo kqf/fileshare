@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import HCaptcha from '@hcaptcha/react-hcaptcha'
 import './App.css'
 import { MyCaptcha } from './components/captcha'
 
