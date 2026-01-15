@@ -7,3 +7,8 @@ export default function sendClientContext() {
   };
   navigator.sendBeacon('/_context', JSON.stringify(payload));
 }
+
+
+export function handleCaptchaSolved() {
+  window.location.reload();
+}

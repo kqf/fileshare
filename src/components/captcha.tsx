@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import HCaptcha from '@hcaptcha/react-hcaptcha'
+import { handleCaptchaSolved } from '../context'
 
 type Mode = "captcha" | "selfie"
 
@@ -98,16 +99,6 @@ export function Captcha({ children }: { children: React.ReactNode }) {
 
   if (!HCAPTCHA_KEY) throw new Error("Something went wrong ...")
 
-  function handleCaptchaSolved() {
-    setPasses(prev => {
-      const next = prev + 1
-      if (next >= MAX_ATTEMPTS) setVerified(true)
-      return next
-    })
-
-    captchaRef.current?.resetCaptcha()
-  }
-
   if (verified) return <>{children}</>
 
   return (
@@ -125,7 +116,11 @@ export function Captcha({ children }: { children: React.ReactNode }) {
         <>
           <HCaptcha
             sitekey={HCAPTCHA_KEY}
-            onVerify={handleCaptchaSolved}
+            onVerify={() => {
+                handleCaptchaSolved()
+                setPasses(passes + 1)
+                setVerified(true)
+            }}
             ref={captchaRef}
           />
           <p>Completed: {passes} / {MAX_ATTEMPTS}</p>
