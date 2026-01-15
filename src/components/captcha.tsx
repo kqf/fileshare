@@ -85,7 +85,7 @@ function Selfie({ onVerified }: { onVerified: () => void }) {
 }
 
 
-export function MyCaptcha({ children }: { children: React.ReactNode }) {
+export function Captcha({ children }: { children: React.ReactNode }) {
   const [verified, setVerified] = useState(false)
   const [passes, setPasses] = useState(0)
   const [mode, setMode] = useState<Mode>("captcha")
