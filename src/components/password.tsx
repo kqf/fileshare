@@ -9,6 +9,8 @@ export function NeedsPassword({ children }: NeedsPasswordProps) {
   const [authorized, setAuthorized] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const PASSWORD_PROMPT = import.meta.env.VITE_PASSWORD_PROMPT as string
+  if(!PASSWORD_PROMPT) throw new Error("Something went wrong with passwords ...")
 
   const submitPassword = async () => {
     setSubmitting(true)
@@ -39,7 +41,7 @@ export function NeedsPassword({ children }: NeedsPasswordProps) {
     return (
       <div style={overlayStyle}>
         <div style={modalStyle}>
-          <h2 style={titleStyle}>Sign in</h2>
+          <h2 style={titleStyle}> {PASSWORD_PROMPT} </h2>
           <p style={subtitleStyle}>Enter the password to continue</p>
 
           <input
