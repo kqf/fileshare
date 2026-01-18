@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import HCaptcha from '@hcaptcha/react-hcaptcha'
 import { handleCaptchaSolved } from '../context'
+import Selfie from './Selfie'
 
 type Mode = "captcha" | "selfie"
 
@@ -62,30 +63,6 @@ function TabBar({
 }
 
 
-function Selfie({ onVerified }: { onVerified: () => void }) {
-  return (
-    <div
-      style={{
-        border: "2px dashed #aaa",
-        padding: 24,
-        borderRadius: 12,
-        marginTop: 16
-      }}
-    >
-      <h3>Selfie verification</h3>
-      <p>Camera + MediaPipe would run here.</p>
-
-      <button
-        onClick={onVerified}
-        style={{ marginTop: 16 }}
-      >
-        Simulate successful face detection
-      </button>
-    </div>
-  )
-}
-
-
 export function Captcha({ children }: { children: React.ReactNode }) {
   const [verified, setVerified] = useState(false)
   const [passes, setPasses] = useState(0)
@@ -95,7 +72,8 @@ export function Captcha({ children }: { children: React.ReactNode }) {
 
   const HCAPTCHA_KEY = import.meta.env.VITE_CAPTCHA_SITE_KEY as string
   const MAX_ATTEMPTS = 3
-  const canUseSelfie = passes >= MAX_ATTEMPTS
+  // const canUseSelfie = passes >= MAX_ATTEMPTS
+  const canUseSelfie = true
 
   if (!HCAPTCHA_KEY) throw new Error("Something went wrong ...")
 
