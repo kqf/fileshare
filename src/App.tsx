@@ -11,14 +11,14 @@ export function App() {
   }, [])
 
   return (
-    <NeedsPassword>
       <Captcha>
+        <NeedsPassword>
         <p>Access granted.</p>
         <button onClick={() => alert("Download failed")}>
           Download files
         </button>
+        </NeedsPassword>
       </Captcha>
-    </NeedsPassword>
   )
 }
 
