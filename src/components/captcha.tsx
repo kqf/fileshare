@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import HCaptcha from '@hcaptcha/react-hcaptcha'
 import { handleCaptchaSolved } from '../context'
-import Selfie from './Selfie'
+import Selfie from './selfie'
 
 type Mode = "captcha" | "selfie"
 
