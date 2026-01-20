@@ -71,8 +71,6 @@ export function Captcha({ children }: { children: React.ReactNode }) {
   const captchaRef = useRef<HCaptcha | null>(null)
 
   const HCAPTCHA_KEY = import.meta.env.VITE_CAPTCHA_SITE_KEY as string
-  const MAX_ATTEMPTS = 3
-  // const canUseSelfie = passes >= MAX_ATTEMPTS
   const canUseSelfie = true
 
   if (!HCAPTCHA_KEY) throw new Error("Something went wrong ...")
@@ -95,13 +93,12 @@ export function Captcha({ children }: { children: React.ReactNode }) {
           <HCaptcha
             sitekey={HCAPTCHA_KEY}
             onVerify={() => {
-                handleCaptchaSolved()
                 setPasses(passes + 1)
                 setVerified(true)
+                handleCaptchaSolved()
             }}
             ref={captchaRef}
           />
-          <p>Completed: {passes} / {MAX_ATTEMPTS}</p>
         </>
       )}
 
@@ -109,11 +106,6 @@ export function Captcha({ children }: { children: React.ReactNode }) {
         <Selfie onVerified={() => {}} />
       )}
 
-      {!canUseSelfie && (
-        <p style={{ fontSize: 12, opacity: 0.6 }}>
-          Selfie unlocks after {MAX_ATTEMPTS} captcha attempts
-        </p>
-      )}
     </div>
   )
 }
