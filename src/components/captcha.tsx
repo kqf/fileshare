@@ -5,6 +5,58 @@ import Selfie from './selfie'
 
 type Mode = "captcha" | "selfie"
 
+export function SegmentedSwitch({
+  value,
+  disabledRight,
+  onChange
+}: {
+  value: Mode
+  disabledRight?: boolean
+  onChange: (v: Mode) => void
+}) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        background: "#f2f2f2",
+        borderRadius: 8,
+        padding: 4,
+        marginBottom: 20,
+        boxShadow: "inset 0 0 0 1px #ddd"
+      }}
+    >
+      {(["captcha", "selfie"] as Mode[]).map(mode => {
+        const active = value === mode
+        const disabled = mode === "selfie" && disabledRight
+
+        return (
+          <button
+            key={mode}
+            disabled={disabled}
+            onClick={() => onChange(mode)}
+            style={{
+              padding: "6px 18px",
+              borderRadius: 6,
+              border: "none",
+              fontSize: 14,
+              background: active ? "#fff" : "transparent",
+              color: active ? "#000" : "#555",
+              cursor: disabled ? "not-allowed" : "pointer",
+              boxShadow: active
+                ? "0 1px 3px rgba(0,0,0,.15)"
+                : "none",
+              opacity: disabled ? 0.4 : 1,
+              transition: "all 0.15s ease"
+            }}
+          >
+            {mode === "captcha" ? "Captcha" : "Selfie"}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 
 function Tab({
   children,
@@ -85,9 +137,9 @@ export function Captcha({ children }: { children: React.ReactNode }) {
         To protect our platform, we need to complete a quick verification.
       </p>
 
-      <TabBar
-        mode={mode}
-        canUseSelfie={canUseSelfie}
+      <SegmentedSwitch
+        value={mode}
+        disabledRight={!canUseSelfie}
         onChange={setMode}
       />
 
