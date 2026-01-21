@@ -79,8 +79,10 @@ export function Captcha({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ textAlign: "center", marginTop: 40 }}>
-      <h2>Verifying your access…</h2>
-      <p>Multiple security checks required.</p>
+      <h2>Verify you’re human</h2>
+      <p>
+        To protect our platform, we need to complete a quick verification.
+      </p>
 
       <TabBar
         mode={mode}
