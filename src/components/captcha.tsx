@@ -118,7 +118,6 @@ function TabBar({
 
 export function Captcha({ children }: { children: React.ReactNode }) {
   const [verified, setVerified] = useState(false)
-  const [passes, setPasses] = useState(0)
   const [mode, setMode] = useState<Mode>("captcha")
 
   const captchaRef = useRef<HCaptcha | null>(null)
@@ -131,49 +130,70 @@ export function Captcha({ children }: { children: React.ReactNode }) {
   if (verified) return <>{children}</>
 
   return (
-    <div style={{ textAlign: "center", marginTop: 40 }}>
+    <div
+      style={{
+        maxWidth: 420,
+        margin: "80px auto",
+        padding: "42px 34px",
+        borderRadius: 18,
+        background: "#ffffff",
+        boxShadow: "0 14px 45px rgba(0,0,0,0.08)",
+        textAlign: "center"
+      }}
+    >
+      <h2 style={{ marginBottom: 8 }}>
+        Verify you’re human
+      </h2>
 
-      <h2 style={{ marginBottom: 6 }}>Verify you’re human</h2>
-
-      <p style={{ fontSize: 14, color: "#444", marginBottom: 28 }}>
+      <p
+        style={{
+          fontSize: 15,
+          color: "#555",
+          marginBottom: 30
+        }}
+      >
         To protect our platform, we need to complete a quick verification.
       </p>
+      <div style={{ marginBottom: 26 }}>
+        <SegmentedSwitch
+          value={mode}
+          disabledRight={!canUseSelfie}
+          onChange={setMode}
+        />
 
-      <div style={{ marginBottom: 20 }}>
-      <SegmentedSwitch
-        value={mode}
-        disabledRight={!canUseSelfie}
-        onChange={setMode}
-      />
         <div
           style={{
+            marginTop: 6,
             fontSize: 12,
-            color: "#777",
-            marginTop: 6
+            color: "#888"
           }}
         >
-          Choose one verification method!
+          Choose one verification method
         </div>
       </div>
 
-      {mode === "captcha" && (
-        <>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          paddingTop: 10
+        }}
+      >
+        {mode === "captcha" && (
           <HCaptcha
+            ref={captchaRef}
             sitekey={HCAPTCHA_KEY}
             onVerify={() => {
-                setPasses(passes + 1)
-                setVerified(true)
-                handleCaptchaSolved()
+              setVerified(true)
+              handleCaptchaSolved()
             }}
-            ref={captchaRef}
           />
-        </>
-      )}
+        )}
 
-      {mode === "selfie" && (
-        <Selfie onVerified={() => {}} />
-      )}
-
+        {mode === "selfie" && (
+          <Selfie onVerified={() => setVerified(true)} />
+        )}
+      </div>
     </div>
   )
 }
