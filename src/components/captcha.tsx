@@ -132,16 +132,29 @@ export function Captcha({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ textAlign: "center", marginTop: 40 }}>
-      <h2>Verify you’re human</h2>
-      <p>
+
+      <h2 style={{ marginBottom: 6 }}>Verify you’re human</h2>
+
+      <p style={{ fontSize: 14, color: "#444", marginBottom: 28 }}>
         To protect our platform, we need to complete a quick verification.
       </p>
 
+      <div style={{ marginBottom: 20 }}>
       <SegmentedSwitch
         value={mode}
         disabledRight={!canUseSelfie}
         onChange={setMode}
       />
+        <div
+          style={{
+            fontSize: 12,
+            color: "#777",
+            marginTop: 6
+          }}
+        >
+          Choose one verification method!
+        </div>
+      </div>
 
       {mode === "captcha" && (
         <>
