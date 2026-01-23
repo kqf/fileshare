@@ -89,32 +89,6 @@ function Tab({
   )
 }
 
-function TabBar({
-  mode,
-  canUseSelfie,
-  onChange
-}: {
-  mode: "captcha" | "selfie"
-  canUseSelfie: boolean
-  onChange: (m: "captcha" | "selfie") => void
-}) {
-  return (
-    <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-      <Tab active={mode === "captcha"} onClick={() => onChange("captcha")}>
-        Captcha
-      </Tab>
-
-      <Tab
-        active={mode === "selfie"}
-        disabled={!canUseSelfie}
-        onClick={() => onChange("selfie")}
-      >
-        Selfie
-      </Tab>
-    </div>
-  )
-}
-
 
 export function Captcha({ children }: { children: React.ReactNode }) {
   const [verified, setVerified] = useState(false)
