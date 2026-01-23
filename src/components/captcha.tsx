@@ -57,39 +57,6 @@ export function SegmentedSwitch({
   )
 }
 
-
-function Tab({
-  children,
-  active,
-  disabled,
-  onClick
-}: {
-  children: React.ReactNode
-  active: boolean
-  disabled?: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        padding: "8px 16px",
-        border: "1px solid #ccc",
-        background: active ? "#222" : "#eee",
-        color: active ? "#fff" : "#000",
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.4 : 1,
-        marginRight: 8,
-        borderRadius: 6
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
-
 export function Captcha({ children }: { children: React.ReactNode }) {
   const [verified, setVerified] = useState(false)
   const [mode, setMode] = useState<Mode>("captcha")
