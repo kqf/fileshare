@@ -1,0 +1,66 @@
+.segmented-switch {
+  display: inline-flex;
+  background: #f2f2f2;
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 20px;
+  box-shadow: inset 0 0 0 1px #ddd;
+}
+
+.segment-button {
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: none;
+  font-size: 14px;
+  background: transparent;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.segment-button.active {
+  background: #ffffff;
+  color: #000;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.segment-button.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.captcha-card {
+  max-width: 420px;
+  margin: 80px auto;
+  padding: 42px 34px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 14px 45px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.captcha-title {
+  margin-bottom: 8px;
+}
+
+.captcha-description {
+  font-size: 15px;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.captcha-switch-wrapper {
+  margin-bottom: 26px;
+}
+
+.captcha-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #888;
+}
+
+.captcha-content {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+}
