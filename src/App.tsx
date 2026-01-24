@@ -10,6 +10,19 @@ export function App() {
       sendClientContext()
   }, [])
 
+  function onCaptchaSolved() {
+    setPasses(p => p + 1)
+
+    // reset so they have to solve again
+    // if (captchaRef.current) {
+    //   captchaRef.current.resetCaptcha()
+    // }
+
+    if (passes + 1 >= 3) {
+      setVerified(true)
+    }
+  }
+
   return (
       <Captcha>
         <NeedsPassword>
