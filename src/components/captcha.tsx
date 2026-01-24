@@ -1,9 +1,11 @@
-import { useState, useRef } from 'react'
-import HCaptcha from '@hcaptcha/react-hcaptcha'
-import { handleCaptchaSolved } from '../context'
-import Selfie from './selfie'
+import { useState, useRef } from "react"
+import HCaptcha from "@hcaptcha/react-hcaptcha"
+import { handleCaptchaSolved } from "../context"
+import Selfie from "./selfie"
+import "./captcha.css"
 
 type Mode = "captcha" | "selfie"
+
 
 export function SegmentedSwitch({
   value,
@@ -15,16 +17,7 @@ export function SegmentedSwitch({
   onChange: (v: Mode) => void
 }) {
   return (
-    <div
-      style={{
-        display: "inline-flex",
-        background: "#f2f2f2",
-        borderRadius: 8,
-        padding: 4,
-        marginBottom: 20,
-        boxShadow: "inset 0 0 0 1px #ddd"
-      }}
-    >
+    <div className="segmented-switch">
       {(["captcha", "selfie"] as Mode[]).map(mode => {
         const active = value === mode
         const disabled = mode === "selfie" && disabledRight
@@ -34,20 +27,13 @@ export function SegmentedSwitch({
             key={mode}
             disabled={disabled}
             onClick={() => onChange(mode)}
-            style={{
-              padding: "6px 18px",
-              borderRadius: 6,
-              border: "none",
-              fontSize: 14,
-              background: active ? "#fff" : "transparent",
-              color: active ? "#000" : "#555",
-              cursor: disabled ? "not-allowed" : "pointer",
-              boxShadow: active
-                ? "0 1px 3px rgba(0,0,0,.15)"
-                : "none",
-              opacity: disabled ? 0.4 : 1,
-              transition: "all 0.15s ease"
-            }}
+            className={[
+              "segment-button",
+              active && "active",
+              disabled && "disabled"
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
             {mode === "captcha" ? "Captcha" : "Selfie"}
           </button>
@@ -56,6 +42,7 @@ export function SegmentedSwitch({
     </div>
   )
 }
+
 
 export function Captcha({ children }: { children: React.ReactNode }) {
   const [verified, setVerified] = useState(false)
@@ -71,55 +58,25 @@ export function Captcha({ children }: { children: React.ReactNode }) {
   if (verified) return <>{children}</>
 
   return (
-    <div
-      style={{
-        maxWidth: 420,
-        margin: "80px auto",
-        padding: "42px 34px",
-        borderRadius: 18,
-        background: "#ffffff",
-        boxShadow: "0 14px 45px rgba(0,0,0,0.08)",
-        textAlign: "center"
-      }}
-    >
-      <h2 style={{ marginBottom: 8 }}>
-        Verify you’re human
-      </h2>
-
-      <p
-        style={{
-          fontSize: 15,
-          color: "#555",
-          marginBottom: 30
-        }}
-      >
+    <div className="captcha-card">
+      <h2 className="captcha-title">Verify you’re human</h2>
+      <p className="captcha-description">
         To protect our platform, we need to complete a quick verification.
       </p>
-      <div style={{ marginBottom: 26 }}>
+
+      <div className="captcha-switch-wrapper">
         <SegmentedSwitch
           value={mode}
           disabledRight={!canUseSelfie}
           onChange={setMode}
         />
 
-        <div
-          style={{
-            marginTop: 6,
-            fontSize: 12,
-            color: "#888"
-          }}
-        >
+        <div className="captcha-hint">
           Choose one verification method
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          paddingTop: 10
-        }}
-      >
+      <div className="captcha-content">
         {mode === "captcha" && (
           <HCaptcha
             ref={captchaRef}
