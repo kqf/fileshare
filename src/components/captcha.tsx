@@ -1,0 +1,140 @@
+import { useState, useRef } from 'react'
+import HCaptcha from '@hcaptcha/react-hcaptcha'
+import { handleCaptchaSolved } from '../context'
+import Selfie from './selfie'
+
+type Mode = "captcha" | "selfie"
+
+export function SegmentedSwitch({
+  value,
+  disabledRight,
+  onChange
+}: {
+  value: Mode
+  disabledRight?: boolean
+  onChange: (v: Mode) => void
+}) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        background: "#f2f2f2",
+        borderRadius: 8,
+        padding: 4,
+        marginBottom: 20,
+        boxShadow: "inset 0 0 0 1px #ddd"
+      }}
+    >
+      {(["captcha", "selfie"] as Mode[]).map(mode => {
+        const active = value === mode
+        const disabled = mode === "selfie" && disabledRight
+
+        return (
+          <button
+            key={mode}
+            disabled={disabled}
+            onClick={() => onChange(mode)}
+            style={{
+              padding: "6px 18px",
+              borderRadius: 6,
+              border: "none",
+              fontSize: 14,
+              background: active ? "#fff" : "transparent",
+              color: active ? "#000" : "#555",
+              cursor: disabled ? "not-allowed" : "pointer",
+              boxShadow: active
+                ? "0 1px 3px rgba(0,0,0,.15)"
+                : "none",
+              opacity: disabled ? 0.4 : 1,
+              transition: "all 0.15s ease"
+            }}
+          >
+            {mode === "captcha" ? "Captcha" : "Selfie"}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+export function Captcha({ children }: { children: React.ReactNode }) {
+  const [verified, setVerified] = useState(false)
+  const [mode, setMode] = useState<Mode>("captcha")
+
+  const captchaRef = useRef<HCaptcha | null>(null)
+
+  const HCAPTCHA_KEY = import.meta.env.VITE_CAPTCHA_SITE_KEY as string
+  const canUseSelfie = true
+
+  if (!HCAPTCHA_KEY) throw new Error("Something went wrong ...")
+
+  if (verified) return <>{children}</>
+
+  return (
+    <div
+      style={{
+        maxWidth: 420,
+        margin: "80px auto",
+        padding: "42px 34px",
+        borderRadius: 18,
+        background: "#ffffff",
+        boxShadow: "0 14px 45px rgba(0,0,0,0.08)",
+        textAlign: "center"
+      }}
+    >
+      <h2 style={{ marginBottom: 8 }}>
+        Verify you’re human
+      </h2>
+
+      <p
+        style={{
+          fontSize: 15,
+          color: "#555",
+          marginBottom: 30
+        }}
+      >
+        To protect our platform, we need to complete a quick verification.
+      </p>
+      <div style={{ marginBottom: 26 }}>
+        <SegmentedSwitch
+          value={mode}
+          disabledRight={!canUseSelfie}
+          onChange={setMode}
+        />
+
+        <div
+          style={{
+            marginTop: 6,
+            fontSize: 12,
+            color: "#888"
+          }}
+        >
+          Choose one verification method
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          paddingTop: 10
+        }}
+      >
+        {mode === "captcha" && (
+          <HCaptcha
+            ref={captchaRef}
+            sitekey={HCAPTCHA_KEY}
+            onVerify={() => {
+              setVerified(true)
+              handleCaptchaSolved()
+            }}
+          />
+        )}
+
+        {mode === "selfie" && (
+          <Selfie onVerified={() => setVerified(true)} />
+        )}
+      </div>
+    </div>
+  )
+}
