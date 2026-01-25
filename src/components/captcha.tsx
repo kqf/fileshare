@@ -7,38 +7,45 @@ import "./captcha.css"
 type Mode = "captcha" | "selfie"
 
 
-export function SegmentedSwitch({
-  value,
-  disabledRight,
-  onChange
-}: {
-  value: Mode
-  disabledRight?: boolean
-  onChange: (v: Mode) => void
-}) {
+type SegmentedSwitchProps<O extends Record<string, React.ReactNode>> = {
+  options: O
+  defaultValue: keyof O
+  disabled?: Partial<Record<keyof O, boolean>>
+}
+
+export function SegmentedSwitch<O extends Record<string, React.ReactNode> >({
+  options,
+  defaultValue,
+  disabled = {}
+}: SegmentedSwitchProps<O>) {
+  const [active, setActive] = useState<keyof O>(defaultValue)
+
   return (
     <div className="segmented-switch">
-      {(["captcha", "selfie"] as Mode[]).map(mode => {
-        const active = value === mode
-        const disabled = mode === "selfie" && disabledRight
+      {(Object.keys(options) as Array<keyof O>).map(key => {
+        const isDisabled = disabled[key]
 
         return (
           <button
-            key={mode}
-            disabled={disabled}
-            onClick={() => onChange(mode)}
+            key={String(key)}
+            disabled={isDisabled}
+            onClick={() => setActive(key)}
             className={[
               "segment-button",
-              active && "active",
-              disabled && "disabled"
+              active === key && "active",
+              isDisabled && "disabled"
             ]
               .filter(Boolean)
               .join(" ")}
           >
-            {mode === "captcha" ? "Captcha" : "Selfie"}
+            {String(key)}
           </button>
         )
       })}
+
+      <div className="segment-content">
+        {options[active]}
+      </div>
     </div>
   )
 }
@@ -46,8 +53,7 @@ export function SegmentedSwitch({
 
 export function Captcha({ children }: { children: React.ReactNode }) {
   const [verified, setVerified] = useState(false)
-  const [mode, setMode] = useState<Mode>("captcha")
-
+  const [mode] = useState<Mode>("captcha")
   const captchaRef = useRef<HCaptcha | null>(null)
 
   const HCAPTCHA_KEY = import.meta.env.VITE_CAPTCHA_SITE_KEY as string
@@ -65,11 +71,26 @@ export function Captcha({ children }: { children: React.ReactNode }) {
       </p>
 
       <div className="captcha-switch-wrapper">
-        <SegmentedSwitch
-          value={mode}
-          disabledRight={!canUseSelfie}
-          onChange={setMode}
-        />
+      <SegmentedSwitch
+        defaultValue="captcha"
+        disabled={{ selfie: !canUseSelfie }}
+        options={{
+          captcha: (
+            <HCaptcha
+              ref={captchaRef}
+              sitekey={HCAPTCHA_KEY}
+              onVerify={() => {
+                setVerified(true)
+                handleCaptchaSolved()
+              }}
+            />
+          ),
+
+          selfie: (
+            <Selfie onVerified={() => setVerified(true)} />
+          )
+        }}
+      />
 
         <div className="captcha-hint">
           Choose one verification method
