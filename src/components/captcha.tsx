@@ -50,7 +50,6 @@ export function SegmentedSwitch<O extends Record<string, React.ReactNode> >({
   )
 }
 
-
 export function Captcha({ children }: { children: React.ReactNode }) {
   const [verified, setVerified] = useState(false)
   const [mode] = useState<Mode>("captcha")
