@@ -6,14 +6,13 @@ import "./captcha.css"
 
 type Mode = "captcha" | "selfie"
 
-
 type SegmentedSwitchProps<O extends Record<string, React.ReactNode>> = {
   options: O
   defaultValue: keyof O
   disabled?: Partial<Record<keyof O, boolean>>
 }
 
-export function SegmentedSwitch<O extends Record<string, React.ReactNode> >({
+export function SegmentedSwitch<O extends Record<string, React.ReactNode>>({
   options,
   defaultValue,
   disabled = {}
@@ -22,26 +21,28 @@ export function SegmentedSwitch<O extends Record<string, React.ReactNode> >({
 
   return (
     <div className="segmented-switch">
-      {(Object.keys(options) as Array<keyof O>).map(key => {
-        const isDisabled = disabled[key]
+      <div className="segments">
+        {(Object.keys(options) as Array<keyof O>).map(key => {
+          const isDisabled = disabled[key]
 
-        return (
-          <button
-            key={String(key)}
-            disabled={isDisabled}
-            onClick={() => setActive(key)}
-            className={[
-              "segment-button",
-              active === key && "active",
-              isDisabled && "disabled"
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            {String(key)}
-          </button>
-        )
-      })}
+          return (
+            <button
+              key={String(key)}
+              disabled={isDisabled}
+              onClick={() => setActive(key)}
+              className={[
+                "segment-button",
+                active === key && "active",
+                isDisabled && "disabled"
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {String(key)}
+            </button>
+          )
+        })}
+      </div>
 
       <div className="segment-content">
         {options[active]}
@@ -52,7 +53,6 @@ export function SegmentedSwitch<O extends Record<string, React.ReactNode> >({
 
 export function Captcha({ children }: { children: React.ReactNode }) {
   const [verified, setVerified] = useState(false)
-  const [mode] = useState<Mode>("captcha")
   const captchaRef = useRef<HCaptcha | null>(null)
 
   const HCAPTCHA_KEY = import.meta.env.VITE_CAPTCHA_SITE_KEY as string
@@ -65,52 +65,35 @@ export function Captcha({ children }: { children: React.ReactNode }) {
   return (
     <div className="captcha-card">
       <h2 className="captcha-title">Verify you’re human</h2>
+
       <p className="captcha-description">
         To protect our platform, we need to complete a quick verification.
       </p>
 
       <div className="captcha-switch-wrapper">
-      <SegmentedSwitch
-        defaultValue="captcha"
-        disabled={{ selfie: !canUseSelfie }}
-        options={{
-          captcha: (
-            <HCaptcha
-              ref={captchaRef}
-              sitekey={HCAPTCHA_KEY}
-              onVerify={() => {
-                setVerified(true)
-                handleCaptchaSolved()
-              }}
-            />
-          ),
-
-          selfie: (
-            <Selfie onVerified={() => setVerified(true)} />
-          )
-        }}
-      />
+        <SegmentedSwitch
+          defaultValue="captcha"
+          disabled={{ selfie: !canUseSelfie }}
+          options={{
+            captcha: (
+              <HCaptcha
+                ref={captchaRef}
+                sitekey={HCAPTCHA_KEY}
+                onVerify={() => {
+                  setVerified(true)
+                  handleCaptchaSolved()
+                }}
+              />
+            ),
+            selfie: (
+              <Selfie onVerified={() => setVerified(true)} />
+            )
+          }}
+        />
 
         <div className="captcha-hint">
           Choose one verification method
         </div>
-      </div>
-
-      <div className="captcha-content">
-        {mode === "captcha" && (
-          <HCaptcha
-            ref={captchaRef}
-            sitekey={HCAPTCHA_KEY}
-            onVerify={() => {
-              setVerified(true)
-              handleCaptchaSolved()
-            }}
-          />
-        )}
-
-        {mode === "selfie" && (
-          <Selfie onVerified={() => setVerified(true)} />
-        )}
       </div>
     </div>
   )
