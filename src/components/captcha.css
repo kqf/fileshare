@@ -1,10 +1,16 @@
 .segmented-switch {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   background: #f2f2f2;
   border-radius: 8px;
   padding: 4px;
   margin-bottom: 20px;
   box-shadow: inset 0 0 0 1px #ddd;
+}
+
+.segments {
+  display: inline-flex;
 }
 
 .segment-button {
@@ -27,6 +33,12 @@
 .segment-button.disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.segment-content {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .captcha-card {
