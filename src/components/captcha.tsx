@@ -70,10 +70,10 @@ export function Captcha({ children }: { children: React.ReactNode }) {
 
       <div className="captcha-switch-wrapper">
         <SegmentedSwitch
-          defaultValue="captcha"
-          disabled={{ selfie: !canUseSelfie }}
+          defaultValue="Captcha"
+          disabled={{ Selfie: !canUseSelfie }}
           options={{
-            captcha: (
+            Captcha: (
               <HCaptcha
                 ref={captchaRef}
                 sitekey={HCAPTCHA_KEY}
@@ -83,7 +83,7 @@ export function Captcha({ children }: { children: React.ReactNode }) {
                 }}
               />
             ),
-            selfie: (
+            Selfie: (
               <Selfie onVerified={() => setVerified(true)} />
             )
           }}
