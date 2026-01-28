@@ -4,8 +4,6 @@ import { handleCaptchaSolved } from "../context"
 import Selfie from "./selfie"
 import "./captcha.css"
 
-type Mode = "captcha" | "selfie"
-
 type SegmentedSwitchProps<O extends Record<string, React.ReactNode>> = {
   options: O
   defaultValue: keyof O
