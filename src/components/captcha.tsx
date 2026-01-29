@@ -43,9 +43,7 @@ export function SegmentedSwitch<O extends Record<string, React.ReactNode>>({
       </div>
 
       <div className="segment-content">
-        <div className="captcha-content">
-            {options[active]}
-        </div>
+          {options[active]}
       </div>
     </div>
   )
