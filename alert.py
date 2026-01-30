@@ -46,6 +46,7 @@ def start_server():
 
 def main():
     print("🟢 waiting for nginx logs...\n")
+    threading.Thread(target=start_server, daemon=True).start()
 
     for line in sys.stdin:
         line = line.strip()
@@ -79,5 +80,4 @@ def main():
 
 
 if __name__ == "__main__":
-    threading.Thread(target=start_server, daemon=True).start()
     main()
