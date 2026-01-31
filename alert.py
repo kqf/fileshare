@@ -7,10 +7,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 client_context = {}
 
 
-def normalize_ip(ip):
-    return ip.replace("::ffff:", "") if ip else ip
-
-
 class ContextHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path != "/_context":
@@ -59,7 +55,7 @@ def main():
             print("❌ invalid log:", line)
             continue
 
-        ip = normalize_ip(log.get("ip"))
+        ip = log.get("ip")
         ctx = client_context.get(ip)
 
         print(
