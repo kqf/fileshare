@@ -14,16 +14,14 @@ RUN npm run build
 
 FROM nginx:alpine
 
-# Install Node.js (needed for alert-worker)
-RUN apk add --no-cache nodejs npm
+# Install Python (instead of Node)
+RUN apk add --no-cache python3
 
-# Remove default nginx static assets
 RUN rm -rf /usr/share/nginx/html/*
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy alert worker + entrypoint
-COPY alert-worker.js /app/alert-worker.js
+COPY alert.py /app/alert.py
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
