@@ -1,51 +1,36 @@
+import asyncio
 import json
 import sys
-import time
-import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from aiohttp import web
 
 client_context = {}
 
 
-class ContextHandler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        if self.path != "/_context":
-            self.send_response(404)
-            self.end_headers()
-            return
+async def handle_context(request: web.Request):
+    try:
+        payload = await request.json()
+        ip = request.remote
+        client_context[ip] = payload
+        print("📥 context received from", ip)
+    except Exception as e:
+        print("❌ bad payload:", e)
 
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length)
-
-        try:
-            payload = json.loads(body)
-            ip = self.client_address[0]
-
-            client_context[ip] = payload
-
-            print("📥 context received from", ip)
-        except Exception as e:
-            print("❌ bad payload:", e)
-
-        self.send_response(204)
-        self.end_headers()
-
-    def log_message(self, *args):
-        pass
+    return web.Response(status=204)
 
 
-def start_server():
-    server = HTTPServer(("127.0.0.1", 3001), ContextHandler)
-    print("🟢 listening on 127.0.0.1:3001\n")
-    server.serve_forever()
+async def read_stdin():
+    loop = asyncio.get_running_loop()
+    reader = asyncio.StreamReader()
+    protocol = asyncio.StreamReaderProtocol(reader)
+    await loop.connect_read_pipe(lambda: protocol, sys.stdin)
 
+    while True:
+        line = await reader.readline()
+        if not line:
+            await asyncio.sleep(0.05)
+            continue
 
-def main():
-    print("🟢 waiting for nginx logs...\n")
-    threading.Thread(target=start_server, daemon=True).start()
-
-    for line in sys.stdin:
-        line = line.strip()
+        line = line.decode().strip()
         if not line:
             continue
 
@@ -56,7 +41,7 @@ def main():
             continue
 
         ip = log.get("ip")
-        ctx = client_context.get(ip)
+        ctx = client_context.pop(ip, None)
 
         print(
             f"{log.get('time')} {ip} "
@@ -71,9 +56,25 @@ def main():
                 f"  tz:       {ctx.get('timezone')}\n"
                 f"  lang:     {ctx.get('language')}"
             )
-
         print()
 
 
+async def main():
+    print("🟢 waiting for nginx logs...\n")
+
+    app = web.Application()
+    app.router.add_post("/_context", handle_context)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "127.0.0.1", 3001)
+
+    print("🟢 listening on 127.0.0.1:3001\n")
+    await site.start()
+
+    # run stdin reader forever
+    await read_stdin()
+
+
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
