@@ -1,2 +1,2 @@
-node /app/alert-worker.js &
+python alert.py &
 nginx -g 'daemon off;'
