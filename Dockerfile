@@ -17,7 +17,7 @@ FROM nginx:alpine
 # Install Python (instead of Node)
 RUN apk add --no-cache python3
 RUN apk add --no-cache python3 py3-pip
-RUN pip3 install --no-cache-dir aiohttp
+RUN pip3 install --no-cache-dir --break-system-package aiohttp
 
 RUN rm -rf /usr/share/nginx/html/*
 
