@@ -18,6 +18,22 @@ async def handle_context(request: web.Request):
     return web.Response(status=204)
 
 
+async def handle_frame(request: web.Request):
+    reader = await request.multipart()
+
+    field = await reader.next()
+    if not field or field.name != "image":
+        return web.Response(status=400, text="no image")
+
+    path = "tmp.jpg"
+    with open(path, "wb") as f:
+        while chunk := await field.read_chunk():
+            f.write(chunk)
+
+    print("📸 frame received:", path)
+    return web.Response(status=204)
+
+
 async def read_stdin():
     loop = asyncio.get_running_loop()
     reader = asyncio.StreamReader()
@@ -65,6 +81,7 @@ async def main():
 
     app = web.Application()
     app.router.add_post("/_context", handle_context)
+    app.router.add_post("/_frame", handle_frame)
 
     runner = web.AppRunner(app)
     await runner.setup()
