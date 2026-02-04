@@ -60,6 +60,7 @@ async def read_stdin():
 
 
 async def main():
+    print("starting the alerter")
     print("🟢 waiting for nginx logs...\n")
 
     app = web.Application()
