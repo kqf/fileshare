@@ -4,45 +4,46 @@ from functools import partial
 import json
 import sys
 from contextlib import suppress
+from dataclasses import dataclass, field
+from functools import partial
 from pathlib import Path
 
 from aiohttp import web
 from environs import Env
-from telethon import TelegramClient
+from telegram import Bot
 
 
 @dataclass(slots=True)
 class Logger:
-    api_id: int
-    api_hash: str
     bot_token: str
     chat_id: str
+    bot: Bot = field(init=False, repr=False)
 
-    client: TelegramClient | None = None
+    def __post_init__(self):
+        self.bot = Bot(self.bot_token)
 
-    def __post_init__(self) -> None:
-        self.client = TelegramClient(
-            "alerter",
-            self.api_id,
-            self.api_hash,
-        ).start(bot_token=self.bot_token)
-
-    async def notify(self, text: str, image: Path | None = None) -> None:
+    async def notify(self, text: str, image: Path | None = None):
         print(text)
         print()
 
         if image:
-            await self.client.send_file(self.chat_id, image, caption=text)
-        else:
-            await self.client.send_message(self.chat_id, text)
+            await self.bot.send_photo(
+                chat_id=self.chat_id,
+                photo=image.open("rb"),
+                caption=text,
+            )
+            return
+
+        await self.bot.send_message(
+            chat_id=self.chat_id,
+            text=text,
+        )
 
 
 def build_logger() -> Logger:
     env = Env()
     env.read_env()
     return Logger(
-        api_id=env.int("TG_API_ID"),
-        api_hash=env.str("TG_API_HASH"),
         bot_token=env.str("TG_BOT_TOKEN"),
         chat_id=env.str("TG_CHAT_ID"),
     )
@@ -130,6 +131,8 @@ async def handle_log(log: dict, logger: Logger) -> None:
 
 async def main() -> None:
     logger = build_logger()
+    await logger.notify("Deployed the alerter")
+
     print("starting the alerter")
     print("🟢 waiting for nginx logs...\n")
     app = web.Application()
