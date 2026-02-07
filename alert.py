@@ -142,7 +142,7 @@ async def main() -> None:
     await web.TCPSite(runner, "127.0.0.1", 3001).start()
 
     print("🟢 listening on 127.0.0.1:3001\n")
-    await read_stdin(logger)
+    # await read_stdin(logger)
 
 
 if __name__ == "__main__":
