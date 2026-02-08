@@ -1,6 +1,5 @@
 import asyncio
 import json
-import sys
 from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import partial
@@ -143,7 +142,7 @@ async def main() -> None:
     await runner.setup()
     print("🟢 listening on 127.0.0.1:3001\n")
     await web.TCPSite(runner, "127.0.0.1", 3001).start()
-    asyncio.create_task(read_file(Path("/var/log/nginx/access.log", logger)))
+    asyncio.create_task(read_file(Path("/var/log/nginx/access.log"), logger))
 
 
 if __name__ == "__main__":
