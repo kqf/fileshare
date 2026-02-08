@@ -140,7 +140,7 @@ async def main() -> None:
     await runner.setup()
     await logger.notify("🟢 Listening on 127.0.0.1:3001\n")
     await web.TCPSite(runner, "127.0.0.1", 3001).start()
-    asyncio.create_task(read_file(Path("/var/log/nginx/access.log"), logger))
+    # asyncio.create_task(read_file(Path("/var/log/nginx/access.log"), logger))
     await logger.notify("🟢 Healthy\n")
 
 
