@@ -92,8 +92,6 @@ async def handle_frame(request: web.Request, logger: Logger) -> web.Response:
 
 async def read_file(path: Path, logger: Logger) -> None:
     async with aiofiles.open(path, "r") as f:
-        await f.seek(0, 2)  # jump to EOF
-
         while True:
             line = await f.readline()
             if not line:
