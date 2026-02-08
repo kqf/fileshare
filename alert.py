@@ -1,4 +1,6 @@
 import asyncio
+from dataclasses import dataclass
+from functools import partial
 import json
 from contextlib import suppress
 from dataclasses import dataclass, field
