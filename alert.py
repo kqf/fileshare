@@ -2,12 +2,12 @@ import asyncio
 from dataclasses import dataclass
 from functools import partial
 import json
-import sys
 from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 
+import aiofiles
 from aiohttp import web
 from environs import Env
 from telegram import Bot
@@ -90,21 +90,22 @@ async def handle_frame(request: web.Request, logger: Logger) -> web.Response:
     return web.Response(status=204)
 
 
-async def read_stdin(logger: Logger) -> None:
-    loop = asyncio.get_running_loop()
-    reader = asyncio.StreamReader()
-    await loop.connect_read_pipe(
-        lambda: asyncio.StreamReaderProtocol(reader),
-        sys.stdin,
-    )
+async def read_file(path: Path, logger: Logger) -> None:
+    async with aiofiles.open(path, "r") as f:
+        await f.seek(0, 2)  # jump to EOF
 
-    async for raw in reader:
-        line = raw.decode().strip()
-        if not line:
-            continue
+        while True:
+            line = await f.readline()
+            if not line:
+                await asyncio.sleep(0.1)
+                continue
 
-        with suppress(json.JSONDecodeError):
-            await handle_log(json.loads(line), logger)
+            line = line.strip()
+            if not line:
+                continue
+
+            with suppress(json.JSONDecodeError):
+                await handle_log(json.loads(line), logger)
 
 
 async def handle_log(log: dict, logger: Logger) -> None:
@@ -131,20 +132,18 @@ async def handle_log(log: dict, logger: Logger) -> None:
 
 async def main() -> None:
     logger = build_logger()
-    await logger.notify("Deployed the alerter")
-
-    print("starting the alerter")
-    print("🟢 waiting for nginx logs...\n")
+    await logger.notify("🟢 Starting the alerter")
+    await logger.notify("🟢 Waiting for nginx logs...\n")
     app = web.Application()
     app.router.add_post("/_context", partial(handle_context, logger=logger))
     app.router.add_post("/_frame", partial(handle_frame, logger=logger))
 
     runner = web.AppRunner(app)
     await runner.setup()
+    await logger.notify("🟢 Listening on 127.0.0.1:3001\n")
     await web.TCPSite(runner, "127.0.0.1", 3001).start()
-
-    print("🟢 listening on 127.0.0.1:3001\n")
-    await read_stdin(logger)
+    asyncio.create_task(read_file(Path("/var/log/nginx/access.log"), logger))
+    await logger.notify("🟢 Healthy\n")
 
 
 if __name__ == "__main__":
