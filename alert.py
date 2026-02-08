@@ -132,17 +132,18 @@ async def main() -> None:
     logger = build_logger()
     await logger.notify("Deployed the alerter")
 
-    print("starting the alerter")
-    print("🟢 waiting for nginx logs...\n")
+    await logger.notify("starting the alerter")
+    await logger.notify("🟢 waiting for nginx logs...\n")
     app = web.Application()
     app.router.add_post("/_context", partial(handle_context, logger=logger))
     app.router.add_post("/_frame", partial(handle_frame, logger=logger))
 
     runner = web.AppRunner(app)
     await runner.setup()
-    print("🟢 listening on 127.0.0.1:3001\n")
+    await logger.notify("🟢 listening on 127.0.0.1:3001\n")
     await web.TCPSite(runner, "127.0.0.1", 3001).start()
     asyncio.create_task(read_file(Path("/var/log/nginx/access.log"), logger))
+    await logger.notify("🟢 Healthy\n")
 
 
 if __name__ == "__main__":
