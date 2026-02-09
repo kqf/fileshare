@@ -1,6 +1,4 @@
 import asyncio
-from dataclasses import dataclass
-from functools import partial
 import json
 from contextlib import suppress
 from dataclasses import dataclass, field
@@ -92,8 +90,6 @@ async def handle_frame(request: web.Request, logger: Logger) -> web.Response:
 
 async def read_file(path: Path, logger: Logger) -> None:
     async with aiofiles.open(path, "r") as f:
-        await f.seek(0, 2)  # jump to EOF
-
         while True:
             line = await f.readline()
             if not line:
@@ -130,21 +126,44 @@ async def handle_log(log: dict, logger: Logger) -> None:
     await logger.notify(msg)
 
 
-async def main() -> None:
+async def start_background_tasks(app: web.Application) -> None:
+    logger: Logger = app["logger"]
+    # Start the log tailing task
+    app["read_file_task"] = asyncio.create_task(
+        read_file(Path("/var/log/nginx/access.log"), logger)
+    )
+
+
+async def cleanup_background_tasks(app: web.Application) -> None:
+    if task := app.get("read_file_task"):
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+
+
+async def create_app() -> web.Application:
     logger = build_logger()
     await logger.notify("🟢 Starting the alerter")
     await logger.notify("🟢 Waiting for nginx logs...\n")
+
     app = web.Application()
+    app["logger"] = logger  # store logger for background tasks
+
     app.router.add_post("/_context", partial(handle_context, logger=logger))
     app.router.add_post("/_frame", partial(handle_frame, logger=logger))
 
-    runner = web.AppRunner(app)
-    await runner.setup()
+    # Hooks for background tasks
+    app.on_startup.append(start_background_tasks)
+    app.on_cleanup.append(cleanup_background_tasks)
     await logger.notify("🟢 Listening on 127.0.0.1:3001\n")
-    await web.TCPSite(runner, "127.0.0.1", 3001).start()
-    asyncio.create_task(read_file(Path("/var/log/nginx/access.log"), logger))
-    await logger.notify("🟢 Healthy\n")
+    return app
+
+
+def main():
+    app = asyncio.run(create_app())
+    # Run aiohttp in native blocking way
+    web.run_app(app, host="127.0.0.1", port=3001)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
