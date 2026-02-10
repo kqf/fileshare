@@ -122,6 +122,8 @@ async def handle_log(log: dict, logger: Logger) -> None:
             f"Viewport: {ctx.get('viewport')}\n"
             f"TZ: {ctx.get('timezone')}\n"
             f"Lang: {ctx.get('language')}"
+            f"Raw: {ctx}"
+            f"Log: {log}"
         )
     await logger.notify(msg)
 
