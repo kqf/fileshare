@@ -61,7 +61,8 @@ async def handle_context(request: web.Request, logger: Logger) -> web.Response:
             f"Screen: {payload.get('screen')}\n"
             f"Viewport: {payload.get('viewport')}\n"
             f"TZ: {payload.get('timezone')}\n"
-            f"Lang: {payload.get('language')}"
+            f"Lang: {payload.get('language')}\n"
+            f"Headers: {request.headers}"
         )
 
         await logger.notify(msg)
