@@ -55,6 +55,8 @@ async def handle_context(request: web.Request, logger: Logger) -> web.Response:
         payload = await request.json()
         client_context[request.remote] = payload
 
+        headers = "".join(f"{k}: `{v}`" for k, v in request.headers.items())
+
         msg = (
             "📥 Context received\n"
             f"IP: {request.remote}\n"
@@ -62,7 +64,8 @@ async def handle_context(request: web.Request, logger: Logger) -> web.Response:
             f"Viewport: {payload.get('viewport')}\n"
             f"TZ: {payload.get('timezone')}\n"
             f"Lang: {payload.get('language')}\n"
-            f"Headers: {request.headers}"
+            "**Headers**\n"
+            + headers
         )
 
         await logger.notify(msg)
