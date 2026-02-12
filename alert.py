@@ -52,6 +52,8 @@ async def handle_context(request: web.Request, logger: Logger) -> web.Response:
         payload = await request.json()
         headers = "".join(f"{k}: `{v}`\n" for k, v in request.headers.items())
 
+        headers = "".join(f"{k}: `{v}`" for k, v in request.headers.items())
+
         msg = (
             "📥 Context received\n"
             f"IP: {request.remote}\n"
