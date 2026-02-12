@@ -47,13 +47,10 @@ def build_logger() -> Logger:
     )
 
 
-client_context: dict[str, dict] = {}
-
-
 async def handle_context(request: web.Request, logger: Logger) -> web.Response:
     with suppress(Exception):
         payload = await request.json()
-        client_context[request.remote] = payload
+        headers = "".join(f"{k}: `{v}`\n" for k, v in request.headers.items())
 
         headers = "".join(f"{k}: `{v}`" for k, v in request.headers.items())
 
@@ -64,8 +61,7 @@ async def handle_context(request: web.Request, logger: Logger) -> web.Response:
             f"Viewport: {payload.get('viewport')}\n"
             f"TZ: {payload.get('timezone')}\n"
             f"Lang: {payload.get('language')}\n"
-            "**Headers**\n"
-            + headers
+            "**Headers**\n" + headers
         )
 
         await logger.notify(msg)
@@ -111,25 +107,12 @@ async def read_file(path: Path, logger: Logger) -> None:
 
 async def handle_log(log: dict, logger: Logger) -> None:
     ip = log.get("ip")
-    ctx = client_context.pop(ip, None)
-
     msg = (
-        "🌐 HTTP request\n"
+        f"🌐 HTTP request from {ip}\n"
         f"{log.get('time')} {ip}\n"
         f"{log.get('method')} {log.get('uri')}\n"
         f"Status: {log.get('status')}"
     )
-
-    if ctx:
-        msg += (
-            "\n\nContext:\n"
-            f"Screen: {ctx.get('screen')}\n"
-            f"Viewport: {ctx.get('viewport')}\n"
-            f"TZ: {ctx.get('timezone')}\n"
-            f"Lang: {ctx.get('language')}"
-            f"Raw: {ctx}"
-            f"Log: {log}"
-        )
     await logger.notify(msg)
 
 
@@ -139,9 +122,12 @@ async def start_background_tasks(app: web.Application) -> None:
     app["read_file_task"] = asyncio.create_task(
         read_file(Path("/var/log/nginx/access.log"), logger)
     )
+    logger.notify("started ngnix listener")
 
 
 async def cleanup_background_tasks(app: web.Application) -> None:
+    logger: Logger = app["logger"]
+    logger.notify("cleaning up ngnix listener")
     if task := app.get("read_file_task"):
         task.cancel()
         with suppress(asyncio.CancelledError):
