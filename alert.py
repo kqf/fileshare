@@ -9,6 +9,7 @@ import aiofiles
 from aiohttp import web
 from environs import Env
 from telegram import Bot
+from telegram.constants import ParseMode
 
 
 @dataclass(slots=True)
@@ -35,6 +36,7 @@ class Logger:
         await self.bot.send_message(
             chat_id=self.chat_id,
             text=text,
+            parse_mode=ParseMode.MARKDOWN_V2,
         )
 
 
@@ -47,10 +49,15 @@ def build_logger() -> Logger:
     )
 
 
+def sanitize(key):
+    clean = key.replace("`", "")
+    return f"`{clean}`"
+
+
 async def handle_context(request: web.Request, logger: Logger) -> web.Response:
     with suppress(Exception):
         payload = await request.json()
-        headers = "".join(f"{k}: `{v}`\n" for k, v in request.headers.items())
+        headers = "".join(f"{k}: {sanitize(v)} \n" for k, v in request.headers.items())
 
         msg = (
             "📥 Context received\n"
@@ -124,8 +131,7 @@ async def start_background_tasks(app: web.Application) -> None:
 
 
 async def cleanup_background_tasks(app: web.Application) -> None:
-    logger: Logger = app["logger"]
-    await logger.notify("cleaning up ngnix listener")
+    print("Cleaning up the background task")
     if task := app.get("read_file_task"):
         task.cancel()
         with suppress(asyncio.CancelledError):
