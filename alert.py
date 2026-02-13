@@ -52,8 +52,6 @@ async def handle_context(request: web.Request, logger: Logger) -> web.Response:
         payload = await request.json()
         headers = "".join(f"{k}: `{v}`\n" for k, v in request.headers.items())
 
-        headers = "".join(f"{k}: `{v}`" for k, v in request.headers.items())
-
         msg = (
             "📥 Context received\n"
             f"IP: {request.remote}\n"
@@ -122,12 +120,12 @@ async def start_background_tasks(app: web.Application) -> None:
     app["read_file_task"] = asyncio.create_task(
         read_file(Path("/var/log/nginx/access.log"), logger)
     )
-    logger.notify("started ngnix listener")
+    await logger.notify("started ngnix listener")
 
 
 async def cleanup_background_tasks(app: web.Application) -> None:
     logger: Logger = app["logger"]
-    logger.notify("cleaning up ngnix listener")
+    await logger.notify("cleaning up ngnix listener")
     if task := app.get("read_file_task"):
         task.cancel()
         with suppress(asyncio.CancelledError):
