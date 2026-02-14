@@ -58,10 +58,7 @@ def sanitize(key):
 async def handle_context(request: web.Request, logger: Logger) -> web.Response:
     with suppress(Exception):
         payload = await request.json()
-        headers = "".join(
-            f"{k}: {sanitize(v)} \n"
-            for k, v in request.headers.items()
-        )
+        headers = "".join(f"{k}: {sanitize(v)} \n" for k, v in request.headers.items())
 
         msg = (
             "📥 Context received\n"
@@ -111,10 +108,8 @@ async def read_file(path: Path, logger: Logger) -> None:
             if not line:
                 continue
 
-            try:
+            with suppress(json.JSONDecodeError):
                 await handle_log(json.loads(line), logger)
-            except Exception as e:
-                print("Error:", e)
 
 
 async def handle_log(log: dict, logger: Logger) -> None:
@@ -128,17 +123,13 @@ async def handle_log(log: dict, logger: Logger) -> None:
     await logger.notify(msg)
 
 
-async def on_startup(app: web.Application) -> None:
-    logger: Logger = app["logger"]
-
+async def on_startup(app: web.Application, logger: Logger) -> None:
     await logger.notify("🟢 Starting the alerter")
     await logger.notify("🟢 Waiting for nginx logs...\n")
     await logger.notify("🟢 Listening on 127.0.0.1:3001\n")
 
 
-async def start_background_tasks(app: web.Application) -> None:
-    logger: Logger = app["logger"]
-
+async def start_background_tasks(app: web.Application, logger: Logger) -> None:
     app["read_file_task"] = asyncio.create_task(
         read_file(Path("var/log/nginx/access.log"), logger)
     )
@@ -155,15 +146,11 @@ async def cleanup_background_tasks(app: web.Application) -> None:
 
 def create_app() -> web.Application:
     app = web.Application()
-
     logger = build_logger()
-    app["logger"] = logger
-
     app.router.add_post("/_context", partial(handle_context, logger=logger))
     app.router.add_post("/_frame", partial(handle_frame, logger=logger))
-
-    app.on_startup.append(on_startup)
-    app.on_startup.append(start_background_tasks)
+    app.on_startup.append(partial(on_startup, logger=logger))
+    app.on_startup.append(partial(start_background_tasks, logger=logger))
     app.on_cleanup.append(cleanup_background_tasks)
     return app
 
