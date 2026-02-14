@@ -25,17 +25,18 @@ class Logger:
         print()
 
         if image:
-            await self.bot.send_photo(
-                chat_id=self.chat_id,
-                photo=image.open("rb"),
-                caption=text,
-            )
+            with image.open("rb") as f:
+                await self.bot.send_photo(
+                    chat_id=self.chat_id,
+                    photo=f,
+                    caption=text,
+                )
             return
 
         await self.bot.send_message(
             chat_id=self.chat_id,
             text=text,
-            parse_mode="markdown"
+            parse_mode="markdown",
         )
 
 
@@ -56,7 +57,10 @@ def sanitize(key):
 async def handle_context(request: web.Request, logger: Logger) -> web.Response:
     with suppress(Exception):
         payload = await request.json()
-        headers = "".join(f"{k}: {sanitize(v)} \n" for k, v in request.headers.items())
+        headers = "".join(
+            f"{k}: {sanitize(v)} \n"
+            for k, v in request.headers.items()
+        )
 
         msg = (
             "📥 Context received\n"
@@ -81,6 +85,7 @@ async def handle_frame(request: web.Request, logger: Logger) -> web.Response:
         return web.Response(status=400, text="no image")
 
     path = Path("tmp.jpg")
+
     with open(path, "wb") as f:
         while chunk := await field.read_chunk():
             f.write(chunk)
@@ -105,8 +110,10 @@ async def read_file(path: Path, logger: Logger) -> None:
             if not line:
                 continue
 
-            with suppress(json.JSONDecodeError):
+            try:
                 await handle_log(json.loads(line), logger)
+            except Exception as e:
+                print("Error:", e)
 
 
 async def handle_log(log: dict, logger: Logger) -> None:
@@ -120,44 +127,50 @@ async def handle_log(log: dict, logger: Logger) -> None:
     await logger.notify(msg)
 
 
+async def on_startup(app: web.Application) -> None:
+    logger: Logger = app["logger"]
+
+    await logger.notify("🟢 Starting the alerter")
+    await logger.notify("🟢 Waiting for nginx logs...\n")
+    await logger.notify("🟢 Listening on 127.0.0.1:3001\n")
+
+
 async def start_background_tasks(app: web.Application) -> None:
     logger: Logger = app["logger"]
-    # Start the log tailing task
+
     app["read_file_task"] = asyncio.create_task(
-        read_file(Path("/var/log/nginx/access.log"), logger)
+        read_file(Path("var/log/nginx/access.log"), logger)
     )
 
 
 async def cleanup_background_tasks(app: web.Application) -> None:
-    print("Cleaning up the background task")
     if task := app.get("read_file_task"):
         task.cancel()
         with suppress(asyncio.CancelledError):
             await task
 
 
-async def create_app() -> web.Application:
-    logger = build_logger()
-    await logger.notify("🟢 Starting the alerter")
-    await logger.notify("🟢 Waiting for nginx logs...\n")
-
+def create_app() -> web.Application:
     app = web.Application()
-    app["logger"] = logger  # store logger for background tasks
+
+    logger = build_logger()
+    app["logger"] = logger
 
     app.router.add_post("/_context", partial(handle_context, logger=logger))
     app.router.add_post("/_frame", partial(handle_frame, logger=logger))
 
-    # Hooks for background tasks
+    app.on_startup.append(on_startup)
     app.on_startup.append(start_background_tasks)
     app.on_cleanup.append(cleanup_background_tasks)
-    await logger.notify("🟢 Listening on 127.0.0.1:3001\n")
     return app
 
 
 def main():
-    app = asyncio.run(create_app())
-    # Run aiohttp in native blocking way
-    web.run_app(app, host="127.0.0.1", port=3001)
+    web.run_app(
+        create_app(),
+        host="127.0.0.1",
+        port=3001,
+    )
 
 
 if __name__ == "__main__":
