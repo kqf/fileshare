@@ -9,7 +9,6 @@ import aiofiles
 from aiohttp import web
 from environs import Env
 from telegram import Bot
-from telegram.constants import ParseMode
 
 
 @dataclass(slots=True)
@@ -36,7 +35,7 @@ class Logger:
         await self.bot.send_message(
             chat_id=self.chat_id,
             text=text,
-            parse_mode=ParseMode.MARKDOWN_V2,
+            parse_mode="markdown"
         )
 
 
@@ -127,7 +126,6 @@ async def start_background_tasks(app: web.Application) -> None:
     app["read_file_task"] = asyncio.create_task(
         read_file(Path("/var/log/nginx/access.log"), logger)
     )
-    await logger.notify("started ngnix listener")
 
 
 async def cleanup_background_tasks(app: web.Application) -> None:
