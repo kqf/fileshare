@@ -26,17 +26,18 @@ class Logger:
         print()
 
         if image:
-            await self.bot.send_photo(
-                chat_id=self.chat_id,
-                photo=image.open("rb"),
-                caption=text,
-            )
+            with image.open("rb") as f:
+                await self.bot.send_photo(
+                    chat_id=self.chat_id,
+                    photo=f,
+                    caption=text,
+                )
             return
 
         await self.bot.send_message(
             chat_id=self.chat_id,
             text=text,
-            parse_mode="markdown"
+            parse_mode="markdown",
         )
 
 
@@ -82,6 +83,7 @@ async def handle_frame(request: web.Request, logger: Logger) -> web.Response:
         return web.Response(status=400, text="no image")
 
     path = Path("tmp.jpg")
+
     with open(path, "wb") as f:
         while chunk := await field.read_chunk():
             f.write(chunk)
@@ -121,11 +123,15 @@ async def handle_log(log: dict, logger: Logger) -> None:
     await logger.notify(msg)
 
 
-async def start_background_tasks(app: web.Application) -> None:
-    logger: Logger = app["logger"]
-    # Start the log tailing task
+async def on_startup(app: web.Application, logger: Logger) -> None:
+    await logger.notify("🟢 Starting the alerter")
+    await logger.notify("🟢 Waiting for nginx logs...\n")
+    await logger.notify("🟢 Listening on 127.0.0.1:3001\n")
+
+
+async def start_background_tasks(app: web.Application, logger: Logger) -> None:
     app["read_file_task"] = asyncio.create_task(
-        read_file(Path("/var/log/nginx/access.log"), logger)
+        read_file(Path("var/log/nginx/access.log"), logger)
     )
     await logger.notify("started ngnix listener")
 
@@ -138,28 +144,23 @@ async def cleanup_background_tasks(app: web.Application) -> None:
             await task
 
 
-async def create_app() -> web.Application:
-    logger = build_logger()
-    await logger.notify("🟢 Starting the alerter")
-    await logger.notify("🟢 Waiting for nginx logs...\n")
-
+def create_app() -> web.Application:
     app = web.Application()
-    app["logger"] = logger  # store logger for background tasks
-
+    logger = build_logger()
     app.router.add_post("/_context", partial(handle_context, logger=logger))
     app.router.add_post("/_frame", partial(handle_frame, logger=logger))
-
-    # Hooks for background tasks
-    app.on_startup.append(start_background_tasks)
+    app.on_startup.append(partial(on_startup, logger=logger))
+    app.on_startup.append(partial(start_background_tasks, logger=logger))
     app.on_cleanup.append(cleanup_background_tasks)
-    await logger.notify("🟢 Listening on 127.0.0.1:3001\n")
     return app
 
 
 def main():
-    app = asyncio.run(create_app())
-    # Run aiohttp in native blocking way
-    web.run_app(app, host="127.0.0.1", port=3001)
+    web.run_app(
+        create_app(),
+        host="127.0.0.1",
+        port=3001,
+    )
 
 
 if __name__ == "__main__":
