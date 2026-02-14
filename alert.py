@@ -9,6 +9,7 @@ import aiofiles
 from aiohttp import web
 from environs import Env
 from telegram import Bot
+from telegram.constants import ParseMode
 
 
 @dataclass(slots=True)
@@ -141,9 +142,11 @@ async def start_background_tasks(app: web.Application) -> None:
     app["read_file_task"] = asyncio.create_task(
         read_file(Path("var/log/nginx/access.log"), logger)
     )
+    await logger.notify("started ngnix listener")
 
 
 async def cleanup_background_tasks(app: web.Application) -> None:
+    print("Cleaning up the background task")
     if task := app.get("read_file_task"):
         task.cancel()
         with suppress(asyncio.CancelledError):
