@@ -9,7 +9,6 @@ import aiofiles
 from aiohttp import web
 from environs import Env
 from telegram import Bot
-from telegram.constants import ParseMode
 
 
 @dataclass(slots=True)
