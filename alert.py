@@ -99,6 +99,7 @@ async def read_file(path: Path, logger: Logger) -> None:
     async with aiofiles.open(path, "r") as f:
         await f.seek(0, 2)
         while True:
+            print('here')
             line = await f.readline()
             if not line:
                 await asyncio.sleep(0.1)
@@ -115,10 +116,10 @@ async def read_file(path: Path, logger: Logger) -> None:
 async def handle_log(log: dict, logger: Logger) -> None:
     ip = log.get("ip")
     msg = (
-        f"🌐 HTTP request from {ip}\n"
-        f"{log.get('time')} {ip}\n"
-        f"{log.get('method')} {log.get('uri')}\n"
-        f"Status: {log.get('status')}"
+        f"🌐 HTTP request from `{ip}`\n"
+        f"`{log.get('time')}` `{ip}`\n"
+        f"`{log.get('method')}` `{log.get('uri')}`\n"
+        f"Status: `{log.get('status')}`"
     )
     await logger.notify(msg)
 
