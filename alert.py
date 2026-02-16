@@ -94,11 +94,15 @@ async def handle_frame(request: web.Request, logger: Logger) -> web.Response:
     return web.Response(status=204)
 
 
+async def handle_version(request: web.Request) -> web.Response:
+    return web.Response(text="Hello world")
+
+
 async def read_file(path: Path, logger: Logger) -> None:
     async with aiofiles.open(path, "r") as f:
         await f.seek(0, 2)
         while True:
-            print('here')
+            print("here")
             line = await f.readline()
             if not line:
                 await asyncio.sleep(0.1)
@@ -149,6 +153,7 @@ def create_app() -> web.Application:
     logger = build_logger()
     app.router.add_post("/_context", partial(handle_context, logger=logger))
     app.router.add_post("/_frame", partial(handle_frame, logger=logger))
+    app.router.add_get("/version", handle_version)
     app.on_startup.append(partial(on_startup, logger=logger))
     app.on_startup.append(partial(start_background_tasks, logger=logger))
     app.on_cleanup.append(cleanup_background_tasks)
