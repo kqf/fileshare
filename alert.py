@@ -135,7 +135,7 @@ async def on_startup(app: web.Application, logger: Logger) -> None:
 
 async def start_background_tasks(app: web.Application, logger: Logger) -> None:
     app["read_file_task"] = asyncio.create_task(
-        read_file(Path("/var/log/nginx/access.log"), logger)
+        read_file(Path("var/log/nginx/access.log"), logger)
     )
     await logger.notify("started ngnix listener")
 
