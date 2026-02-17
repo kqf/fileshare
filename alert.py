@@ -57,7 +57,8 @@ def sanitize(key):
 async def handle_context(request: web.Request, logger: Logger) -> web.Response:
     with suppress(Exception):
         payload = await request.json()
-        headers = "".join(f"{k}: {sanitize(v)} \n" for k, v in request.headers.items())
+        hitems = request.headers.items()
+        headers = "".join(f"{k}: {sanitize(v)} \n" for k, v in hitems)
 
         msg = (
             "📥 Context received\n"
@@ -127,6 +128,21 @@ async def handle_log(log: dict, logger: Logger) -> None:
     await logger.notify(msg)
 
 
+async def handle_nginx_log(request: web.Request) -> web.Response:
+    headers = request.headers
+
+    msg = (
+        f"🌐 HTTP request from `{headers.get('X-Real-IP')}`\n"
+        f"`{headers.get('X-Request-Time')}`\n"
+        f"`{headers.get('X-Request-Method')}` "
+        f"`{headers.get('X-Request-URI')}`\n"
+        f"UA: `{headers.get('X-User-Agent')}`"
+    )
+
+    await request.app["logger"].notify(msg)
+    return web.Response(status=204)
+
+
 async def on_startup(app: web.Application, logger: Logger) -> None:
     await logger.notify("🟢 Starting the alerter")
     await logger.notify("🟢 Waiting for nginx logs...\n")
@@ -154,6 +170,7 @@ def create_app() -> web.Application:
     app.router.add_post("/_context", partial(handle_context, logger=logger))
     app.router.add_post("/_frame", partial(handle_frame, logger=logger))
     app.router.add_get("/version", handle_version)
+    app.router.add_post("/_nginx_log", handle_nginx_log)
     app.on_startup.append(partial(on_startup, logger=logger))
     app.on_startup.append(partial(start_background_tasks, logger=logger))
     app.on_cleanup.append(cleanup_background_tasks)
