@@ -15,7 +15,7 @@ RUN npm run build
 FROM nginx:alpine
 RUN apk add --no-cache python3
 RUN apk add --no-cache python3 py3-pip
-RUN pip3 install --no-cache-dir --break-system-package aiohttp aiofiles environs python-telegram-bot
+RUN pip3 install --no-cache-dir --break-system-package aiohttp environs python-telegram-bot
 
 RUN rm -rf /usr/share/nginx/html/*
 

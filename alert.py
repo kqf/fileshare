@@ -1,11 +1,8 @@
-import asyncio
-import json
 from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 
-import aiofiles
 from aiohttp import web
 from environs import Env
 from telegram import Bot
@@ -99,35 +96,6 @@ async def handle_version(request: web.Request) -> web.Response:
     return web.Response(text="Hello world")
 
 
-async def read_file(path: Path, logger: Logger) -> None:
-    async with aiofiles.open(path, "r") as f:
-        await f.seek(0, 2)
-        while True:
-            print("here")
-            line = await f.readline()
-            if not line:
-                await asyncio.sleep(0.1)
-                continue
-
-            line = line.strip()
-            if not line:
-                continue
-
-            with suppress(json.JSONDecodeError):
-                await handle_log(json.loads(line), logger)
-
-
-async def handle_log(log: dict, logger: Logger) -> None:
-    ip = log.get("ip")
-    msg = (
-        f"🌐 HTTP request from `{ip}`\n"
-        f"`{log.get('time')}` `{ip}`\n"
-        f"`{log.get('method')}` `{log.get('uri')}`\n"
-        f"Status: `{log.get('status')}`"
-    )
-    await logger.notify(msg)
-
-
 async def handle_nginx_log(request: web.Request) -> web.Response:
     headers = request.headers
 
@@ -149,21 +117,6 @@ async def on_startup(app: web.Application, logger: Logger) -> None:
     await logger.notify("🟢 Listening on 127.0.0.1:3001\n")
 
 
-async def start_background_tasks(app: web.Application, logger: Logger) -> None:
-    app["read_file_task"] = asyncio.create_task(
-        read_file(Path("var/log/nginx/access.log"), logger)
-    )
-    await logger.notify("started ngnix listener")
-
-
-async def cleanup_background_tasks(app: web.Application) -> None:
-    print("Cleaning up the background task")
-    if task := app.get("read_file_task"):
-        task.cancel()
-        with suppress(asyncio.CancelledError):
-            await task
-
-
 def create_app() -> web.Application:
     app = web.Application()
     logger = build_logger()
@@ -172,8 +125,6 @@ def create_app() -> web.Application:
     app.router.add_get("/version", handle_version)
     app.router.add_post("/_nginx_log", handle_nginx_log)
     app.on_startup.append(partial(on_startup, logger=logger))
-    app.on_startup.append(partial(start_background_tasks, logger=logger))
-    app.on_cleanup.append(cleanup_background_tasks)
     return app
 
 
