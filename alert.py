@@ -18,9 +18,6 @@ class Logger:
         self.bot = Bot(self.bot_token)
 
     async def notify(self, text: str, image: Path | None = None):
-        print(text)
-        print()
-
         if image:
             with image.open("rb") as f:
                 await self.bot.send_photo(
@@ -98,7 +95,7 @@ async def handle_version(request: web.Request) -> web.Response:
 
 async def handle_nginx_log(request: web.Request) -> web.Response:
     headers = request.headers
-
+    print("Here")
     msg = (
         f"🌐 HTTP request from `{headers.get('X-Real-IP')}`\n"
         f"`{headers.get('X-Request-Time')}`\n"
@@ -131,7 +128,7 @@ def create_app() -> web.Application:
 def main():
     web.run_app(
         create_app(),
-        host="127.0.0.1",
+        host="0.0.0.0",
         port=3001,
     )
 
