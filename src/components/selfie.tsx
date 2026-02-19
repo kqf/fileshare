@@ -1,21 +1,79 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import styles from "./selfie.module.css";
 
-export default function Selfie({
-  onVerified
-}: {
+type SelfieProps = {
   onVerified: () => void;
-}) {
+};
+
+export default function Selfie({ onVerified }: SelfieProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [cameraReady, setCameraReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const uploadSelfie = async (blob: Blob): Promise<void> => {
+    const formData = new FormData();
+    formData.append("image", blob, "selfie.jpg");
+
+    const response = await fetch("/_frame", {
+      method: "POST",
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error("Upload failed");
+    }
+  };
+
+  const captureSelfie = useCallback((isAuto = false): void => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (!video || !canvas) return;
+    if (!video.videoWidth || !video.videoHeight) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0);
+
+    setSending(true);
+
+    canvas.toBlob(blob => {
+      if (!blob) {
+        setError("Failed to create image");
+        setSending(false);
+        return;
+      }
+
+      // 🔥 Explicitly handle promise
+      void uploadSelfie(blob)
+        .then(() => {
+          if (!isAuto) {
+            onVerified();
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          setError("Failed to send selfie");
+        })
+        .finally(() => {
+          setSending(false);
+        });
+
+    }, "image/jpeg", 0.95);
+
+  }, [onVerified]);
 
   useEffect(() => {
-    let stream: MediaStream;
+    let stream: MediaStream | undefined;
 
-    async function startCamera() {
+    const startCamera = async (): Promise<void> => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -26,50 +84,31 @@ export default function Selfie({
           audio: false
         });
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-          setCameraReady(true);
-        }
+        const video = videoRef.current;
+        if (!video) return;
+
+        video.srcObject = stream;
+        await video.play();
+
+        setCameraReady(true);
+
+        // auto capture
+        setTimeout(() => {
+          captureSelfie(true);
+        }, 600);
+
       } catch (err) {
-        setError("Unable to access camera");
         console.error(err);
+        setError("Unable to access camera");
       }
-    }
+    };
 
     void startCamera();
 
     return () => {
       stream?.getTracks().forEach(track => track.stop());
     };
-  }, []);
-
-  const captureSelfie = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-
-    if (!video || !canvas) return;
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.drawImage(video, 0, 0);
-
-    canvas.toBlob(blob => {
-      if (!blob) return;
-
-      /*
-        STUB:
-        sendSelfieToBackend(blob);
-      */
-
-      console.log("Selfie captured", blob);
-      onVerified();
-    }, "image/jpeg", 0.95);
-  };
+  }, [captureSelfie]);
 
   return (
     <div className={styles.wrapper}>
@@ -85,7 +124,6 @@ export default function Selfie({
           className={styles.video}
         />
 
-        {/* Oval overlay */}
         <div className={styles.overlay}>
           <div className={styles.oval} />
         </div>
@@ -94,11 +132,11 @@ export default function Selfie({
       <canvas ref={canvasRef} className={styles.hiddenCanvas} />
 
       <button
-        onClick={captureSelfie}
-        disabled={!cameraReady}
+        onClick={() => captureSelfie(false)}
+        disabled={!cameraReady || sending}
         className={styles.captureButton}
       >
-        Capture selfie
+        {sending ? "Sending..." : "Capture selfie"}
       </button>
 
       <p className={styles.hint}>
