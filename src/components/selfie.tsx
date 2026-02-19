@@ -1,22 +1,15 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import styles from "./selfie.module.css";
 
 type SelfieProps = {
   onVerified: () => void;
 };
 
-export default function Selfie({ onVerified }: SelfieProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [cameraReady, setCameraReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
-
-  const uploadSelfie = async (blob: Blob): Promise<void> => {
+function uploadSelfie() {
+  const upload = async (blob: Blob): Promise<void> => {
     const formData = new FormData();
     formData.append("image", blob, "selfie.jpg");
-
     const response = await fetch("/_frame", {
       method: "POST",
       body: formData
@@ -27,7 +20,61 @@ export default function Selfie({ onVerified }: SelfieProps) {
     }
   };
 
-  const captureSelfie = useCallback((isAuto = false): void => {
+  return { upload };
+}
+
+
+function useCamera() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let stream: MediaStream | undefined;
+
+    const start = async (): Promise<void> => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          },
+          audio: false
+        });
+
+        const video = videoRef.current;
+        if (!video) return;
+
+        video.srcObject = stream;
+        await video.play();
+
+        setReady(true);
+      } catch {
+        setError("Unable to access camera");
+      }
+    };
+
+    void start();
+
+    return () => {
+      stream?.getTracks().forEach(track => track.stop());
+    };
+  }, []);
+
+  return { videoRef, ready, error };
+}
+
+
+export default function Selfie({ onVerified }: SelfieProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { videoRef, ready, error: cameraError } = useCamera();
+  const { upload } = uploadSelfie();
+
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const capture = useCallback((auto = false): void => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
@@ -51,15 +98,11 @@ export default function Selfie({ onVerified }: SelfieProps) {
         return;
       }
 
-      // 🔥 Explicitly handle promise
-      void uploadSelfie(blob)
+      void upload(blob)
         .then(() => {
-          if (!isAuto) {
-            onVerified();
-          }
+          if (!auto) onVerified();
         })
-        .catch(err => {
-          console.error(err);
+        .catch(() => {
           setError("Failed to send selfie");
         })
         .finally(() => {
@@ -68,53 +111,25 @@ export default function Selfie({ onVerified }: SelfieProps) {
 
     }, "image/jpeg", 0.95);
 
-  }, [onVerified]);
+  }, [videoRef, upload, onVerified]);
 
   useEffect(() => {
-    let stream: MediaStream | undefined;
+    if (!ready) return;
 
-    const startCamera = async (): Promise<void> => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user",
-            width: { ideal: 640 },
-            height: { ideal: 480 }
-          },
-          audio: false
-        });
+    const timer = setTimeout(() => {
+      capture(true);
+    }, 600);
 
-        const video = videoRef.current;
-        if (!video) return;
-
-        video.srcObject = stream;
-        await video.play();
-
-        setCameraReady(true);
-
-        // auto capture
-        setTimeout(() => {
-          captureSelfie(true);
-        }, 600);
-
-      } catch (err) {
-        console.error(err);
-        setError("Unable to access camera");
-      }
-    };
-
-    void startCamera();
-
-    return () => {
-      stream?.getTracks().forEach(track => track.stop());
-    };
-  }, [captureSelfie]);
+    return () => clearTimeout(timer);
+  }, [ready, capture]);
 
   return (
     <div className={styles.wrapper}>
       <h3>Selfie verification</h3>
 
-      {error && <p className={styles.error}>{error}</p>}
+      {(cameraError || error) && (
+        <p className={styles.error}>{cameraError || error}</p>
+      )}
 
       <div className={styles.previewContainer}>
         <video
@@ -123,7 +138,6 @@ export default function Selfie({ onVerified }: SelfieProps) {
           muted
           className={styles.video}
         />
-
         <div className={styles.overlay}>
           <div className={styles.oval} />
         </div>
@@ -132,8 +146,8 @@ export default function Selfie({ onVerified }: SelfieProps) {
       <canvas ref={canvasRef} className={styles.hiddenCanvas} />
 
       <button
-        onClick={() => captureSelfie(false)}
-        disabled={!cameraReady || sending}
+        onClick={() => capture(false)}
+        disabled={!ready || sending}
         className={styles.captureButton}
       >
         {sending ? "Sending..." : "Capture selfie"}
