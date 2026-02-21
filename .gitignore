@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 .node-version
 .env
+.env*
 .python-version
