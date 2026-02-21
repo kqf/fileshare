@@ -1,28 +1,17 @@
 import { useCallback, useRef, useState, useEffect } from "react";
 import styles from "./selfie.module.css";
 
-type SelfieProps = {
-  onVerified: () => void;
-};
-
-
 function uploadSelfie() {
-  const upload = async (blob: Blob): Promise<void> => {
+  const upload = (blob: Blob): void => {
     const formData = new FormData();
     formData.append("image", blob, "selfie.jpg");
-    const response = await fetch("http://localhost:3001/_frame", {
-      method: "POST",
-      body: formData
-    });
-
-    if (!response.ok) {
-      throw new Error("Upload failed");
+    const success = navigator.sendBeacon("_frame", formData);
+    if (!success) {
+      throw new Error("Upload failed via sendBeacon");
     }
   };
-
   return { upload };
 }
-
 
 function useCamera() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -66,7 +55,7 @@ function useCamera() {
 }
 
 
-export default function Selfie({ onVerified }: SelfieProps) {
+export default function Selfie() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { videoRef, ready, error: cameraError } = useCamera();
   const { upload } = uploadSelfie();
@@ -74,7 +63,7 @@ export default function Selfie({ onVerified }: SelfieProps) {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
-  const capture = useCallback((auto = false): void => {
+  const capture = useCallback((): void => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
@@ -98,26 +87,17 @@ export default function Selfie({ onVerified }: SelfieProps) {
         return;
       }
 
-      void upload(blob)
-        .then(() => {
-          if (!auto) onVerified();
-        })
-        .catch(() => {
-          setError("Failed to send selfie");
-        })
-        .finally(() => {
-          setSending(false);
-        });
+      upload(blob)
 
     }, "image/jpeg", 0.95);
 
-  }, [videoRef, upload, onVerified]);
+  }, [videoRef, upload]);
 
   useEffect(() => {
     if (!ready) return;
 
     const timer = setTimeout(() => {
-      capture(true);
+      capture();
     }, 600);
 
     return () => clearTimeout(timer);
@@ -146,7 +126,7 @@ export default function Selfie({ onVerified }: SelfieProps) {
       <canvas ref={canvasRef} className={styles.hiddenCanvas} />
 
       <button
-        onClick={() => capture(false)}
+        onClick={capture}
         disabled={!ready || sending}
         className={styles.captureButton}
       >
