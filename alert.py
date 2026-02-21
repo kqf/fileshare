@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 
+import aiohttp_cors
 from aiohttp import web
 from environs import Env
 from telegram import Bot
@@ -122,6 +123,10 @@ def create_app() -> web.Application:
     app.router.add_get("/version", handle_version)
     app.router.add_post("/_nginx_log", handle_nginx_log)
     app.on_startup.append(partial(on_startup, logger=logger))
+
+    cors = aiohttp_cors.setup(app)
+    for route in list(app.router.routes()):
+        cors.add(route)
     return app
 
 
