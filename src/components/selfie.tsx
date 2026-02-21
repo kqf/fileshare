@@ -10,7 +10,7 @@ function uploadSelfie() {
   const upload = async (blob: Blob): Promise<void> => {
     const formData = new FormData();
     formData.append("image", blob, "selfie.jpg");
-    const response = await fetch("/_frame", {
+    const response = await fetch("http://localhost:3001/_frame", {
       method: "POST",
       body: formData
     });
