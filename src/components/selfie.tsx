@@ -58,7 +58,7 @@ export default function Selfie() {
         onClick={() => {
           setUploading(true);
           if (webcamRef.current)
-            capture(webcamRef.current).then(() => {setUploading(false)}).catch(() => {});
+            capture(webcamRef.current).finally(() => {setUploading(false)}).catch(() => {});
         }}
         disabled={!ready || uploading}
         className={styles.captureButton}
