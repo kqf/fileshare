@@ -26,3 +26,4 @@ dist-ssr
 .env
 .env*
 .python-version
+tmp.jpg
