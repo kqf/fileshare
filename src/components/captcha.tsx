@@ -84,7 +84,7 @@ export function Captcha({ children }: { children: React.ReactNode }) {
               />
             ),
             Selfie: (
-              <Selfie onVerified={() => setVerified(true)} />
+              <Selfie />
             )
           }}
         />
