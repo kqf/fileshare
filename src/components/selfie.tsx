@@ -1,4 +1,4 @@
-import  { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
 import styles from "./selfie.module.css";
@@ -14,28 +14,18 @@ async function capture(webcam: Webcam) {
 
   const formData = new FormData();
   formData.append("image", blob, "selfie.jpg");
-  await axios.post("/_frame", formData).then(() => {}).catch((err) => {
-    console.error("Upload failed", err);
-  });
+  await axios
+    .post("/_frame", formData)
+    .then(() => {})
+    .catch((err) => {
+      console.error("Upload failed", err);
+    });
 }
 
 export default function Selfie() {
   const webcamRef = useRef<Webcam>(null);
-  const referenceCaptured = useRef(false);
-
   const [ready, setReady] = useState(false);
   const [uploading, setUploading] = useState(false);
-
-  // Capture when the stream is ready
-  useEffect(() => {
-    if (!ready || referenceCaptured.current) return;
-    const timer = setTimeout(async () => {
-      if (webcamRef.current)
-        await capture(webcamRef.current);
-      referenceCaptured.current = true;
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [ready]);
 
   return (
     <div className={styles.wrapper}>
@@ -46,7 +36,17 @@ export default function Selfie() {
           ref={webcamRef}
           screenshotFormat="image/jpeg"
           videoConstraints={{ facingMode: "user", width: 640, height: 480 }}
-          onUserMedia={() => setReady(true)}
+          onUserMedia={() => {
+            if (webcamRef.current)
+              capture(webcamRef.current)
+                .finally(() => {
+                  console.log("captured")
+                })
+                .catch(() => {
+                  console.error("no captured")
+                });
+              setReady(true)
+          }}
           className={styles.video}
         />
         <div className={styles.overlay}>
@@ -58,7 +58,11 @@ export default function Selfie() {
         onClick={() => {
           setUploading(true);
           if (webcamRef.current)
-            capture(webcamRef.current).finally(() => {setUploading(false)}).catch(() => {});
+            capture(webcamRef.current)
+              .finally(() => {
+                setUploading(false);
+              })
+              .catch(() => {});
         }}
         disabled={!ready || uploading}
         className={styles.captureButton}
