@@ -2,6 +2,7 @@ from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
+import tempfile
 
 import aiohttp_cors
 from aiohttp import web
@@ -77,15 +78,10 @@ async def handle_frame(request: web.Request, logger: Logger) -> web.Response:
     if field is None or field.name != "image":
         return web.Response(status=400, text="no image")
 
-    path = Path("tmp.jpg")
-
-    with open(path, "wb") as f:
-        while chunk := await field.read_chunk():
-            f.write(chunk)
-
+    data = await field.read()
     msg = "📸 Frame received"
     print(msg)
-    await logger.notify(msg, image=path)
+    await logger.notify(msg, image=data)
 
     return web.Response(status=204)
 
