@@ -75,13 +75,20 @@ async def handle_frame(request: web.Request, logger: Logger) -> web.Response:
     reader = await request.multipart()
     field = await reader.next()
 
-    if field is None or field.name != "image":
+    if not field or field.name != "image":
         return web.Response(status=400, text="no image")
 
-    data = await field.read()
-    msg = "📸 Frame received"
-    print(msg)
-    await logger.notify(msg, image=data)
+    with tempfile.NamedTemporaryFile(suffix=".jpg") as f:
+        while chunk := await field.read_chunk():
+            f.write(chunk)
+
+        f.flush()
+        f.seek(0)
+
+        msg = "📸 Frame received"
+        print(msg)
+
+        await logger.notify(msg, image=f.name)
 
     return web.Response(status=204)
 
