@@ -36,7 +36,7 @@ export default function Selfie() {
           ref={webcamRef}
           screenshotFormat="image/jpeg"
           videoConstraints={{ facingMode: "user", width: 640, height: 480 }}
-          onUserMedia={() => {
+          onLoadedData={() => {
             if (webcamRef.current)
               capture(webcamRef.current)
                 .finally(() => {
