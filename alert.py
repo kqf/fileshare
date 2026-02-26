@@ -87,8 +87,7 @@ async def handle_frame(request: web.Request, logger: Logger) -> web.Response:
 
         msg = "📸 Frame received"
         print(msg)
-
-        await logger.notify(msg, image=f.name)
+        await logger.notify(msg, image=f)
 
     return web.Response(status=204)
 
