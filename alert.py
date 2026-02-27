@@ -97,15 +97,11 @@ async def handle_version(request: web.Request) -> web.Response:
 
 
 async def handle_ngx_log(request: web.Request, logger: Logger) -> web.Response:
-    headers = request.headers
-    print("Here")
-    msg = (
-        f"🌐 HTTP request from `{headers.get('X-Real-IP')}`\n"
-        f"`{headers.get('X-Request-Time')}`\n"
-        f"`{headers.get('X-Request-Method')}` "
-        f"`{headers.get('X-Request-URI')}`\n"
-        f"UA: `{headers.get('X-User-Agent')}`"
-    )
+    header_dump = dict(request.headers)
+
+    msg = "FULL HEADER DUMP\n"
+    for k, v in header_dump.items():
+        msg += f"{k}: {v}\n"
 
     await logger.notify(msg)
     return web.Response(status=204)
