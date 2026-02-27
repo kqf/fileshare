@@ -36,16 +36,29 @@ export default function Selfie() {
           ref={webcamRef}
           screenshotFormat="image/jpeg"
           videoConstraints={{ facingMode: "user", width: 640, height: 480 }}
-          onLoadedData={() => {
-            if (webcamRef.current)
-              capture(webcamRef.current)
-                .finally(() => {
-                  console.log("captured")
-                })
-                .catch(() => {
-                  console.error("no captured")
+          onUserMedia={() => {
+            const video = webcamRef.current?.video as HTMLVideoElement;
+
+            if (!video) return;
+
+            const waitForFrame = () => {
+              if (video.readyState === 4) {
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(() => {
+                    if (webcamRef.current) {
+                      capture(webcamRef.current)
+                        .finally(() => console.log("captured"))
+                        .catch(() => console.error("no captured"));
+                    }
+                    setReady(true);
+                  });
                 });
-              setReady(true)
+              } else {
+                requestAnimationFrame(waitForFrame);
+              }
+            };
+
+            waitForFrame();
           }}
           className={styles.video}
         />
