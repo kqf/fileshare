@@ -96,7 +96,7 @@ async def handle_version(request: web.Request) -> web.Response:
     return web.Response(text="Hello world")
 
 
-async def handle_nginx_log(request: web.Request) -> web.Response:
+async def handle_ngx_log(request: web.Request, logger: Logger) -> web.Response:
     headers = request.headers
     print("Here")
     msg = (
@@ -107,7 +107,7 @@ async def handle_nginx_log(request: web.Request) -> web.Response:
         f"UA: `{headers.get('X-User-Agent')}`"
     )
 
-    await request.app["logger"].notify(msg)
+    await logger.notify(msg)
     return web.Response(status=204)
 
 
@@ -123,7 +123,7 @@ def create_app() -> web.Application:
     app.router.add_post("/_context", partial(handle_context, logger=logger))
     app.router.add_post("/_frame", partial(handle_frame, logger=logger))
     app.router.add_get("/version", handle_version)
-    app.router.add_post("/_nginx_log", handle_nginx_log)
+    app.router.add_post("/_nginx_log", partial(handle_ngx_log, logger=logger))
     app.on_startup.append(partial(on_startup, logger=logger))
 
     cors = aiohttp_cors.setup(app)
